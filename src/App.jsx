@@ -2229,25 +2229,21 @@ export default function HoloHQApp() {
             </div>
           </div>
 
-          {/* quick actions — search + store tools as a horizontal scroll strip */}
-          <div className="px-4 mt-4 flex gap-2 overflow-x-auto ht-scroll pb-1">
-            <button onClick={() => setTab("search")} className="ht-input rounded-xl px-4 py-2.5 flex-shrink-0 flex items-center gap-2 text-sm font-semibold">
-              <Search size={15} color="var(--cyan)" /> Search
+          {/* quick actions — 3 key actions only */}
+          <div className="px-4 mt-4 grid gap-2" style={{ gridTemplateColumns:"1fr 1fr 1fr" }}>
+            <button onClick={() => { setTab("tools"); setToolsView("pricer"); }} className="ht-card py-3 flex flex-col items-center gap-1.5 text-center">
+              <Tag size={18} color="var(--purple)" />
+              <span style={{ fontSize:11, fontWeight:600 }}>Price &amp; Label</span>
             </button>
-            <button onClick={() => { setTab("tools"); setToolsView("pricer"); }} className="ht-input rounded-xl px-4 py-2.5 flex-shrink-0 flex items-center gap-2 text-sm font-semibold">
-              <Tag size={15} color="var(--purple)" /> Price &amp; Label
+            <button onClick={() => { if (!gate(STORE_META.pos.label)) return; setTab("shop"); setStoreView("pos"); }} className="ht-card py-3 flex flex-col items-center gap-1.5 text-center" style={{ position:"relative" }}>
+              <CreditCard size={18} color="var(--green)" />
+              <span style={{ fontSize:11, fontWeight:600 }}>Register</span>
+              {!isPro && <span className="ht-mono" style={{ position:"absolute", top:4, right:6, fontSize:8, fontWeight:700, color:"var(--cyan)" }}>PRO</span>}
             </button>
-            <button onClick={() => { if (!gate(STORE_META.pos.label)) return; setTab("shop"); setStoreView("pos"); }} className="ht-input rounded-xl px-4 py-2.5 flex-shrink-0 flex items-center gap-2 text-sm font-semibold">
-              <CreditCard size={15} color="var(--green)" /> Register {!isPro && <span className="ht-mono text-xs" style={{ color:"var(--cyan)" }}>PRO</span>}
-            </button>
-            <button onClick={() => { if (!gate(STORE_META.kiosk.label)) return; setTab("shop"); setStoreView("kiosk"); }} className="ht-input rounded-xl px-4 py-2.5 flex-shrink-0 flex items-center gap-2 text-sm font-semibold">
-              <ImageIcon size={15} color="var(--amber)" /> Kiosk {!isPro && <span className="ht-mono text-xs" style={{ color:"var(--cyan)" }}>PRO</span>}
-            </button>
-            <button onClick={() => { setTab("tools"); setToolsView("calculator"); }} className="ht-input rounded-xl px-4 py-2.5 flex-shrink-0 flex items-center gap-2 text-sm font-semibold">
-              <CalcIcon size={15} color="var(--muted)" /> Calc
-            </button>
-            <button onClick={() => { setTab("portfolio"); if (!isPro && portfolios.length >= FREE_LIMITS.cardPortfolios) { gate("Unlimited portfolios"); return; } setNewPortfolioOpen(true); }} className="ht-btn-primary rounded-xl px-4 py-2.5 flex-shrink-0 flex items-center gap-2 text-sm font-semibold">
-              <Plus size={15} /> New Portfolio
+            <button onClick={() => { if (!gate(STORE_META.kiosk.label)) return; setTab("shop"); setStoreView("kiosk"); }} className="ht-card py-3 flex flex-col items-center gap-1.5 text-center" style={{ position:"relative" }}>
+              <ImageIcon size={18} color="var(--amber)" />
+              <span style={{ fontSize:11, fontWeight:600 }}>Kiosk</span>
+              {!isPro && <span className="ht-mono" style={{ position:"absolute", top:4, right:6, fontSize:8, fontWeight:700, color:"var(--cyan)" }}>PRO</span>}
             </button>
           </div>
 
@@ -3003,11 +2999,16 @@ export default function HoloHQApp() {
               placeholder="Search..." className="ht-input rounded-lg px-3 py-2 text-sm flex-1" />
             <select value={portfolioDetailSort} onChange={e => setPortfolioDetailSort(e.target.value)}
               className="ht-input rounded-lg px-2 py-2 text-xs flex-shrink-0">
-              <option value="name" style={{ background:"var(--panel-2)" }}>A–Z</option>
-              <option value="priceHigh" style={{ background:"var(--panel-2)" }}>Price ↓</option>
-              <option value="priceLow" style={{ background:"var(--panel-2)" }}>Price ↑</option>
+              <option value="valueHigh" style={{ background:"var(--panel-2)" }}>Highest Value</option>
+              <option value="priceLow" style={{ background:"var(--panel-2)" }}>Price: Low to High</option>
+              <option value="priceHigh" style={{ background:"var(--panel-2)" }}>Price: High to Low</option>
+              <option value="trendUp" style={{ background:"var(--panel-2)" }}>% Change: Low to High</option>
+              <option value="trendDown" style={{ background:"var(--panel-2)" }}>% Change: High to Low</option>
+              <option value="name" style={{ background:"var(--panel-2)" }}>Name: A to Z</option>
+              <option value="nameZ" style={{ background:"var(--panel-2)" }}>Name: Z to A</option>
+              <option value="newest" style={{ background:"var(--panel-2)" }}>Date Added: Newest</option>
+              <option value="oldest" style={{ background:"var(--panel-2)" }}>Date Added: Oldest</option>
               <option value="profit" style={{ background:"var(--panel-2)" }}>Profit</option>
-              <option value="trend" style={{ background:"var(--panel-2)" }}>Trending</option>
             </select>
             <div className="flex rounded-lg overflow-hidden flex-shrink-0" style={{ border:"1px solid var(--line)" }}>
               <button onClick={() => setPortfolioViewMode("list")} className="px-2.5 py-2" style={{ background: portfolioViewMode==="list" ? "var(--purple)" : "var(--panel-2)" }}>
@@ -3026,26 +3027,42 @@ export default function HoloHQApp() {
                 if (!q) return true;
                 return r.name.toLowerCase().includes(q) || (r.set || "").toLowerCase().includes(q) || (r.condition || "").toLowerCase().includes(q);
               });
-              if (portfolioDetailSort === "priceHigh") rows = [...rows].sort((a,b) => (b.price||0)-(a.price||0));
+              if (portfolioDetailSort === "valueHigh") rows = [...rows].sort((a,b) => (b.price||0)*b.qty-(a.price||0)*a.qty);
+              else if (portfolioDetailSort === "priceHigh") rows = [...rows].sort((a,b) => (b.price||0)-(a.price||0));
               else if (portfolioDetailSort === "priceLow") rows = [...rows].sort((a,b) => (a.price||0)-(b.price||0));
+              else if (portfolioDetailSort === "trendDown") rows = [...rows].sort((a,b) => (b.trendPct||0)-(a.trendPct||0));
+              else if (portfolioDetailSort === "trendUp") rows = [...rows].sort((a,b) => (a.trendPct||0)-(b.trendPct||0));
+              else if (portfolioDetailSort === "nameZ") rows = [...rows].sort((a,b) => b.name.localeCompare(a.name));
+              else if (portfolioDetailSort === "newest") rows = [...rows].sort((a,b) => (b.id||"").localeCompare(a.id||""));
+              else if (portfolioDetailSort === "oldest") rows = [...rows].sort((a,b) => (a.id||"").localeCompare(b.id||""));
               else if (portfolioDetailSort === "profit") rows = [...rows].sort((a,b) => { const pa = a.costBasis!=null?(a.price-a.costBasis)*a.qty:0; const pb = b.costBasis!=null?(b.price-b.costBasis)*b.qty:0; return pb-pa; });
-              else if (portfolioDetailSort === "trend") rows = [...rows].sort((a,b) => (b.trendPct||0)-(a.trendPct||0));
               else rows = [...rows].sort((a,b) => a.name.localeCompare(b.name));
               return rows.map(r => {
               const profit = r.costBasis != null ? (r.price - r.costBasis) * r.qty : null;
               const img = findCatalogImage(r.name, r.set);
               if (portfolioViewMode === "grid") return (
-                <div key={r.id} className="ht-card overflow-hidden" onClick={() => openCardDetail(r)} style={{ cursor:"pointer", padding:0 }}>
-                  <div style={{ height:120, background:"var(--panel-2)", display:"flex", alignItems:"center", justifyContent:"center", position:"relative" }}>
-                    {img ? <img src={img} alt={r.name} style={{ maxHeight:110, maxWidth:"90%", objectFit:"contain", filter:"drop-shadow(0 4px 8px rgba(0,0,0,0.5))" }} onError={e=>e.target.style.display="none"} />
-                    : <Sparkles size={24} color="var(--muted)" />}
-                    <span className="ht-mono absolute" style={{ bottom:4, right:6, fontSize:10, color:"var(--cyan)", background:"rgba(10,9,18,0.8)", padding:"1px 4px", borderRadius:3 }}>{r.condition?.replace("Raw ","")}</span>
+                <div key={r.id} className="ht-card overflow-hidden" onClick={() => openCardDetail(r)} style={{ cursor:"pointer", padding:0, display:"flex", flexDirection:"column" }}>
+                  {/* image area */}
+                  <div style={{ background:"radial-gradient(circle at 50% 40%, var(--panel-2), var(--panel))", display:"flex", alignItems:"center", justifyContent:"center", padding:"16px 12px 12px", position:"relative", minHeight:140 }}>
+                    {img
+                      ? <img src={img} alt={r.name} style={{ maxHeight:120, maxWidth:"85%", objectFit:"contain", filter:"drop-shadow(0 6px 14px rgba(0,0,0,0.55))" }} onError={e=>e.target.style.display="none"} />
+                      : <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:6 }}><Sparkles size={28} color="var(--muted)" /><span style={{ fontSize:10, color:"var(--muted)", textAlign:"center" }}>{r.name}</span></div>
+                    }
+                    {/* condition badge */}
+                    <span className="ht-mono" style={{ position:"absolute", bottom:6, right:8, fontSize:10, fontWeight:700, color:"var(--cyan)", background:"rgba(10,9,18,0.85)", padding:"2px 6px", borderRadius:4, border:"1px solid var(--line)" }}>
+                      {r.condition?.replace("Raw ","")}
+                    </span>
+                    {r.qty > 1 && <span className="ht-mono" style={{ position:"absolute", top:6, left:8, fontSize:10, fontWeight:700, color:"var(--text)", background:"rgba(10,9,18,0.85)", padding:"2px 6px", borderRadius:4, border:"1px solid var(--line)" }}>×{r.qty}</span>}
                   </div>
-                  <div className="p-2.5">
-                    <div className="text-xs font-semibold truncate">{r.name}</div>
-                    <div className="text-xs truncate mb-1" style={{ color:"var(--muted)" }}>{r.set}</div>
-                    <div className="ht-mono text-sm font-bold" style={{ color:"var(--green)" }}>${r.price?.toFixed(2)}</div>
-                    {profit !== null && <div className="ht-mono text-xs" style={{ color: profit>=0?"var(--green)":"var(--red)" }}>{profit>=0?"+":"-"}${Math.abs(profit).toFixed(2)}</div>}
+                  {/* info */}
+                  <div style={{ padding:"10px 12px 12px", flex:1, display:"flex", flexDirection:"column" }}>
+                    <div style={{ fontSize:13, fontWeight:600, marginBottom:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{r.name}</div>
+                    <div style={{ fontSize:11, color:"var(--muted)", marginBottom:8, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{r.set}</div>
+                    <div style={{ marginTop:"auto", display:"flex", alignItems:"flex-end", justifyContent:"space-between" }}>
+                      <div className="ht-mono" style={{ fontSize:16, fontWeight:700, color:"var(--green)" }}>${r.price?.toFixed(2)}</div>
+                      {profit !== null && <div className="ht-mono" style={{ fontSize:11, fontWeight:600, color: profit>=0?"var(--green)":"var(--red)" }}>{profit>=0?"+":"-"}${Math.abs(profit).toFixed(2)}</div>}
+                    </div>
+                    <TrendTag pct={r.trendPct} />
                   </div>
                 </div>
               );
