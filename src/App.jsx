@@ -4984,12 +4984,7 @@ export default function HoloHQApp() {
         </div>
       )}
 
-      </>)}
-
-
-
-      
-            {/* ============ AUTH MODAL ============ */}
+      {/* ============ AUTH MODAL ============ */}
       {authOpen && (
         <div style={{ position:"fixed", inset:0, zIndex:70, background:"rgba(5,4,10,0.9)", display:"flex", alignItems:"flex-end", justifyContent:"center" }} onClick={() => { setAuthOpen(false); setAuthError(""); }}>
           <div onClick={e => e.stopPropagation()} className="ht-fade" style={{ width:"100%", maxWidth:480, background:"var(--panel)", borderRadius:"20px 20px 0 0", border:"1px solid var(--line)", padding:24, paddingBottom:40 }}>
@@ -5199,6 +5194,8 @@ export default function HoloHQApp() {
         })}
       </div>
 
+      </>
+      )}
 
     </div>
   );
