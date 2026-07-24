@@ -777,8 +777,8 @@ export default function HoloHQApp() {
   const [allItemsSort, setAllItemsSort] = useState("value");
   const [allItemsChartRange, setAllItemsChartRange] = useState("1mo");
   const [portfolioDetailSearch, setPortfolioDetailSearch] = useState("");
-  const [portfolioViewMode, setPortfolioViewMode] = useState("list"); // "list" | "grid"
-  const [portfolioDetailSort, setPortfolioDetailSort] = useState("name"); // "name"|"priceHigh"|"priceLow"|"profit"|"trend"
+  const [portfolioViewMode, setPortfolioViewMode] = useState("grid"); // "list" | "grid"
+  const [portfolioDetailSort, setPortfolioDetailSort] = useState("valueHigh"); // "name"|"priceHigh"|"priceLow"|"profit"|"trend"
   const [portfolioListSearchOpen, setPortfolioListSearchOpen] = useState(false);
   const [portfolioListSearch, setPortfolioListSearch] = useState("");
   // ---- drag-to-reorder portfolios on the main page ----
@@ -3020,7 +3020,7 @@ export default function HoloHQApp() {
             </div>
           </div>
 
-          <div className={portfolioViewMode === "grid" ? "px-4 grid grid-cols-2 gap-2 mb-6 tablet-cols-3" : "px-4 flex flex-col gap-2 mb-6"}>
+          <div className={portfolioViewMode === "grid" ? "px-3 mb-6" : "px-4 flex flex-col gap-2 mb-6"} style={portfolioViewMode === "grid" ? { background:"var(--panel-2)", borderRadius:14, padding:10, border:"2px solid var(--line)" } : {}}><div className={portfolioViewMode === "grid" ? "grid grid-cols-3 gap-1.5 tablet-cols-4" : "flex flex-col gap-2"}>
             {(() => {
               let rows = activePortfolio.rows.filter(r => {
                 const q = portfolioDetailSearch.trim().toLowerCase();
@@ -3041,29 +3041,28 @@ export default function HoloHQApp() {
               const profit = r.costBasis != null ? (r.price - r.costBasis) * r.qty : null;
               const img = findCatalogImage(r.name, r.set);
               if (portfolioViewMode === "grid") return (
-                <div key={r.id} className="ht-card overflow-hidden" onClick={() => openCardDetail(r)} style={{ cursor:"pointer", padding:0, display:"flex", flexDirection:"column" }}>
-                  {/* image area */}
-                  <div style={{ background:"radial-gradient(circle at 50% 40%, var(--panel-2), var(--panel))", display:"flex", alignItems:"center", justifyContent:"center", padding:"16px 12px 12px", position:"relative", minHeight:140 }}>
+                <div key={r.id} onClick={() => openCardDetail(r)}
+                  style={{ cursor:"pointer", background:"var(--panel)", border:"1px solid var(--line)", borderRadius:10, overflow:"hidden", aspectRatio:"63/88", display:"flex", flexDirection:"column", position:"relative" }}>
+                  {/* card image fills most of the slot */}
+                  <div style={{ flex:1, background:"var(--panel-2)", display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden" }}>
                     {img
-                      ? <img src={img} alt={r.name} style={{ maxHeight:120, maxWidth:"85%", objectFit:"contain", filter:"drop-shadow(0 6px 14px rgba(0,0,0,0.55))" }} onError={e=>e.target.style.display="none"} />
-                      : <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:6 }}><Sparkles size={28} color="var(--muted)" /><span style={{ fontSize:10, color:"var(--muted)", textAlign:"center" }}>{r.name}</span></div>
+                      ? <img src={img} alt={r.name} style={{ width:"92%", height:"92%", objectFit:"contain" }} onError={e=>e.target.style.display="none"} />
+                      : <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}><Sparkles size={22} color="var(--muted)" /><span style={{ fontSize:9, color:"var(--muted)", textAlign:"center", padding:"0 4px" }}>{r.name}</span></div>
                     }
-                    {/* condition badge */}
-                    <span className="ht-mono" style={{ position:"absolute", bottom:6, right:8, fontSize:10, fontWeight:700, color:"var(--cyan)", background:"rgba(10,9,18,0.85)", padding:"2px 6px", borderRadius:4, border:"1px solid var(--line)" }}>
-                      {r.condition?.replace("Raw ","")}
-                    </span>
-                    {r.qty > 1 && <span className="ht-mono" style={{ position:"absolute", top:6, left:8, fontSize:10, fontWeight:700, color:"var(--text)", background:"rgba(10,9,18,0.85)", padding:"2px 6px", borderRadius:4, border:"1px solid var(--line)" }}>×{r.qty}</span>}
                   </div>
-                  {/* info */}
-                  <div style={{ padding:"10px 12px 12px", flex:1, display:"flex", flexDirection:"column" }}>
-                    <div style={{ fontSize:13, fontWeight:600, marginBottom:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{r.name}</div>
-                    <div style={{ fontSize:11, color:"var(--muted)", marginBottom:8, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{r.set}</div>
-                    <div style={{ marginTop:"auto", display:"flex", alignItems:"flex-end", justifyContent:"space-between" }}>
-                      <div className="ht-mono" style={{ fontSize:16, fontWeight:700, color:"var(--green)" }}>${r.price?.toFixed(2)}</div>
-                      {profit !== null && <div className="ht-mono" style={{ fontSize:11, fontWeight:600, color: profit>=0?"var(--green)":"var(--red)" }}>{profit>=0?"+":"-"}${Math.abs(profit).toFixed(2)}</div>}
-                    </div>
-                    <TrendTag pct={r.trendPct} />
+                  {/* price + name gradient overlay at bottom */}
+                  <div style={{ position:"absolute", bottom:0, left:0, right:0, background:"linear-gradient(to top, rgba(10,9,18,0.97) 0%, rgba(10,9,18,0.7) 60%, transparent 100%)", padding:"18px 6px 6px" }}>
+                    <div style={{ fontSize:9, fontWeight:600, color:"#F1EEFA", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", lineHeight:1.2 }}>{r.name}</div>
+                    <div style={{ fontFamily:"'JetBrains Mono', monospace", fontSize:11, fontWeight:700, color:"#34D399", marginTop:1 }}>${r.price?.toFixed(2)}</div>
                   </div>
+                  {/* condition badge top-right */}
+                  <span style={{ position:"absolute", top:4, right:4, fontFamily:"'JetBrains Mono', monospace", fontSize:8, fontWeight:700, color:"var(--cyan)", background:"rgba(10,9,18,0.88)", padding:"1px 4px", borderRadius:3, border:"1px solid rgba(45,212,232,0.3)" }}>
+                    {r.condition?.replace("Raw ","")}
+                  </span>
+                  {/* qty badge top-left */}
+                  {r.qty > 1 && <span style={{ position:"absolute", top:4, left:4, fontFamily:"'JetBrains Mono', monospace", fontSize:8, fontWeight:700, color:"#F1EEFA", background:"rgba(10,9,18,0.88)", padding:"1px 4px", borderRadius:3, border:"1px solid var(--line)" }}>×{r.qty}</span>}
+                  {/* profit badge bottom-right if owned */}
+                  {profit !== null && <span style={{ position:"absolute", bottom:24, right:4, fontFamily:"'JetBrains Mono', monospace", fontSize:8, fontWeight:700, color: profit>=0?"#34D399":"#F87171" }}>{profit>=0?"+":"-"}${Math.abs(profit).toFixed(0)}</span>}
                 </div>
               );
               return (
@@ -3123,7 +3122,7 @@ export default function HoloHQApp() {
             });
           })()}
             {activePortfolio.rows.length === 0 && <p className="text-xs" style={{ color: "var(--muted)" }}>No cards yet — add some from Tools.</p>}
-          </div>
+          </div></div>
         </div>
         );
       })()}
