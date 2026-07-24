@@ -16,31 +16,19 @@
         margin: 0; padding: 0; min-height: 100vh;
         background: #0A0912; overflow-x: hidden;
         -webkit-text-size-adjust: 100%;
-        display: flex; justify-content: center; align-items: flex-start;
       }
       #root {
         width: 100%; min-height: 100vh;
         background: #0A0912; overflow-x: hidden;
-        position: relative; flex-shrink: 0;
+        position: relative;
       }
-      /* Phone — full width */
-      @media (max-width: 480px) {
+      /* Phone — full width, bottom nav */
+      @media (max-width: 767px) {
         #root { max-width: 100%; }
       }
-      /* Tablet — wider, good for kiosk */
-      @media (min-width: 481px) and (max-width: 1024px) {
-        #root { max-width: 768px; }
-      }
-      /* Desktop — phone shell */
-      @media (min-width: 1025px) {
-        body { align-items: center; padding: 24px 0; }
-        #root {
-          max-width: 430px;
-          min-height: calc(100vh - 48px);
-          border-radius: 40px;
-          box-shadow: 0 0 0 10px #1a1730, 0 0 80px rgba(139,92,246,0.3);
-          overflow: hidden;
-        }
+      /* Tablet + Desktop — full width, sidebar nav */
+      @media (min-width: 768px) {
+        #root { max-width: 100%; }
       }
     </style>
   </head>
