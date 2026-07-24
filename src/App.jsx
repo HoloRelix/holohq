@@ -3076,24 +3076,31 @@ export default function HoloHQApp() {
               if (portfolioViewMode === "grid") return (
                 <div key={r.id} onClick={() => openCardDetail(r)} className="ht-card"
                   style={{ cursor:"pointer", display:"flex", flexDirection:"column", padding:0, overflow:"hidden" }}>
-                  {/* pure card image — no text overlay */}
+                  {/* pure card image — no overlays */}
                   <div style={{ position:"relative", background:"var(--panel-2)", aspectRatio:"63/88", overflow:"hidden" }}>
                     {img
                       ? <img src={img} alt={r.name} style={{ width:"100%", height:"100%", objectFit:"contain" }} onError={e=>e.target.style.display="none"} />
-                      : <div style={{ width:"100%", height:"100%", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4 }}><Sparkles size={20} color="var(--muted)" /><span style={{ fontSize:9, color:"var(--muted)", textAlign:"center", padding:"0 6px" }}>{r.name}</span></div>
+                      : <div style={{ width:"100%", height:"100%", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:6 }}><Sparkles size={24} color="var(--muted)" /><span style={{ fontSize:10, color:"var(--muted)", textAlign:"center", padding:"0 8px" }}>{r.name}</span></div>
                     }
-                    <span style={{ position:"absolute", top:4, right:4, fontFamily:"'JetBrains Mono', monospace", fontSize:9, fontWeight:700, color:"var(--cyan)", background:"rgba(10,9,18,0.88)", padding:"2px 5px", borderRadius:3, border:"1px solid rgba(45,212,232,0.3)" }}>
-                      {r.condition?.replace("Raw ","")}
-                    </span>
                     {r.qty > 1 && <span style={{ position:"absolute", top:4, left:4, fontFamily:"'JetBrains Mono', monospace", fontSize:9, fontWeight:700, color:"#F1EEFA", background:"rgba(10,9,18,0.88)", padding:"2px 5px", borderRadius:3, border:"1px solid var(--line)" }}>×{r.qty}</span>}
                   </div>
-                  {/* info panel below */}
-                  <div style={{ padding:"8px 10px 10px", borderTop:"1px solid var(--line)" }}>
-                    <div style={{ fontSize:11, fontWeight:600, color:"var(--text)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", marginBottom:4 }}>{r.name}</div>
-                    <div style={{ fontSize:10, color:"var(--muted)", marginBottom:6, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{r.set}</div>
+                  {/* info panel — clean, no overlays on image */}
+                  <div style={{ padding:"10px 11px 12px", borderTop:"1px solid var(--line)", display:"flex", flexDirection:"column", gap:4 }}>
+                    {/* name */}
+                    <div style={{ fontSize:12, fontWeight:600, color:"var(--text)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{r.name}</div>
+                    {/* set */}
+                    <div style={{ fontSize:11, color:"var(--muted)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{r.set}</div>
+                    {/* condition + qty row */}
                     <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                      <span style={{ fontFamily:"'JetBrains Mono', monospace", fontSize:13, fontWeight:700, color:"var(--green)" }}>${r.price?.toFixed(2)}</span>
-                      {profit !== null && <span style={{ fontFamily:"'JetBrains Mono', monospace", fontSize:10, fontWeight:600, color: profit>=0?"var(--green)":"var(--red)" }}>{profit>=0?"+":"-"}${Math.abs(profit).toFixed(0)}</span>}
+                      <span style={{ fontFamily:"'JetBrains Mono', monospace", fontSize:11, fontWeight:700, color:"var(--cyan)", background:"rgba(45,212,232,0.1)", padding:"2px 7px", borderRadius:4, border:"1px solid rgba(45,212,232,0.25)" }}>
+                        {r.condition?.replace("Raw ","")}
+                      </span>
+                      <TrendTag pct={r.trendPct} />
+                    </div>
+                    {/* price + profit */}
+                    <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", marginTop:2 }}>
+                      <span style={{ fontFamily:"'JetBrains Mono', monospace", fontSize:15, fontWeight:700, color:"var(--green)" }}>${r.price?.toFixed(2)}</span>
+                      {profit !== null && <span style={{ fontFamily:"'JetBrains Mono', monospace", fontSize:11, fontWeight:600, color: profit>=0?"var(--green)":"var(--red)" }}>{profit>=0?"+":"-"}${Math.abs(profit).toFixed(2)}</span>}
                     </div>
                   </div>
                 </div>
