@@ -2184,7 +2184,7 @@ export default function HoloHQApp() {
                 if (!meta) return null;
                 const Icon = meta.icon;
                 return (
-                  <button key={key} onClick={() => { if (PRO_TOOLS.includes(key) && !gate(meta.label)) return; setTab("tools"); setToolsView(key); }} className="ht-card p-2.5 flex flex-col items-center justify-center gap-1.5 text-center">
+                  <button key={key} onClick={() => { if (PRO_TOOLS.includes(key) && !gate(meta.label)) return; setTab("tools"); setToolsView(key); }} className="ht-card p-2.5 text-center" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}>
                     <Icon size={17} color={meta.color} />
                     <span className="text-xs font-semibold leading-tight" style={{ fontSize: 10 }}>{meta.label.split(" / ")[0].split(" & ")[0]}</span>
                   </button>
@@ -4967,7 +4967,7 @@ export default function HoloHQApp() {
               haptic(30);
               if (onboardingStep < ONBOARDING_STEPS.length - 1) setOnboardingStep(s => s + 1);
               else { setOnboardingDone(true); }
-            }} className="ht-btn-primary rounded-xl py-4 text-base font-bold w-full flex items-center justify-center gap-2">
+            }} className="ht-btn-primary rounded-xl py-4 text-base font-bold w-full" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
               {onboardingStep < ONBOARDING_STEPS.length - 1 ? (<><span>Next</span><SkipForward size={16} /></>) : (<><span>Get Started</span><Play size={16} /></>)}
             </button>
             {onboardingStep > 0 && (
