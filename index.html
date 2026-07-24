@@ -15,21 +15,40 @@
       html, body {
         margin: 0;
         padding: 0;
-        background: #0A0912;
         min-height: 100vh;
+        background: #0A0912;
         overflow-x: hidden;
         -webkit-text-size-adjust: 100%;
         display: flex;
         justify-content: center;
+        align-items: flex-start;
       }
       #root {
         width: 100%;
-        max-width: 430px;
         min-height: 100vh;
         background: #0A0912;
         overflow-x: hidden;
         position: relative;
         flex-shrink: 0;
+      }
+      /* Phone — full width */
+      @media (max-width: 480px) {
+        #root { max-width: 100%; }
+      }
+      /* Tablet — slightly wider, centered */
+      @media (min-width: 481px) and (max-width: 900px) {
+        #root { max-width: 480px; box-shadow: 0 0 40px rgba(139,92,246,0.15); }
+      }
+      /* Desktop — phone shell, centered */
+      @media (min-width: 901px) {
+        body { align-items: center; padding: 24px 0; }
+        #root {
+          max-width: 430px;
+          min-height: calc(100vh - 48px);
+          border-radius: 40px;
+          box-shadow: 0 0 0 10px #1a1730, 0 0 80px rgba(139,92,246,0.3);
+          overflow: hidden;
+        }
       }
     </style>
   </head>
