@@ -9,7 +9,7 @@ import {
   ShoppingBag, User, Calculator as CalcIcon, ArrowLeftRight, Loader2, Wallet,
   ShieldCheck, XCircle, Camera, Bell, Receipt, Award, Users, CreditCard, Heart, Check,
   Repeat, LineChart, ScanSearch, FileCheck2, CloudUpload, FileText, Clock, RefreshCw, GripVertical,
-  Share2, Sun, Moon, Wifi, WifiOff, Send, Gift, FileSpreadsheet, Zap, ChevronDown, Play, SkipForward
+  Share2, Sun, Moon, Wifi, WifiOff, Send, Gift, FileSpreadsheet, Zap, ChevronDown, Play, SkipForward, LayoutGrid
 } from "lucide-react";
 
 /* ---------------- shared data + helpers ---------------- */
@@ -777,6 +777,8 @@ export default function HoloHQApp() {
   const [allItemsSort, setAllItemsSort] = useState("value");
   const [allItemsChartRange, setAllItemsChartRange] = useState("1mo");
   const [portfolioDetailSearch, setPortfolioDetailSearch] = useState("");
+  const [portfolioViewMode, setPortfolioViewMode] = useState("list"); // "list" | "grid"
+  const [portfolioDetailSort, setPortfolioDetailSort] = useState("name"); // "name"|"priceHigh"|"priceLow"|"profit"|"trend"
   const [portfolioListSearchOpen, setPortfolioListSearchOpen] = useState(false);
   const [portfolioListSearch, setPortfolioListSearch] = useState("");
   // ---- drag-to-reorder portfolios on the main page ----
@@ -2227,19 +2229,25 @@ export default function HoloHQApp() {
             </div>
           </div>
 
-          {/* quick actions */}
-          <div className="px-4 grid grid-cols-4 gap-2 mt-4">
-            <button onClick={() => setTab("portfolio")} className="ht-btn-primary rounded-xl py-3" style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4 }}>
-              <Tag size={16} /><span style={{ fontSize:12, fontWeight:600 }}>Price</span>
+          {/* quick actions — search + store tools as a horizontal scroll strip */}
+          <div className="px-4 mt-4 flex gap-2 overflow-x-auto ht-scroll pb-1">
+            <button onClick={() => setTab("search")} className="ht-input rounded-xl px-4 py-2.5 flex-shrink-0 flex items-center gap-2 text-sm font-semibold">
+              <Search size={15} color="var(--cyan)" /> Search
             </button>
-            <button onClick={() => setTab("search")} className="ht-input rounded-xl py-3" style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4 }}>
-              <Search size={16} /><span style={{ fontSize:12, fontWeight:600 }}>Search</span>
+            <button onClick={() => { setTab("tools"); setToolsView("pricer"); }} className="ht-input rounded-xl px-4 py-2.5 flex-shrink-0 flex items-center gap-2 text-sm font-semibold">
+              <Tag size={15} color="var(--purple)" /> Price &amp; Label
             </button>
-            <button onClick={() => { setTab("tools"); setToolsView("calculator"); }} className="ht-input rounded-xl py-3" style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4 }}>
-              <CalcIcon size={16} /><span style={{ fontSize:12, fontWeight:600 }}>Calc</span>
+            <button onClick={() => { if (!gate(STORE_META.pos.label)) return; setTab("shop"); setStoreView("pos"); }} className="ht-input rounded-xl px-4 py-2.5 flex-shrink-0 flex items-center gap-2 text-sm font-semibold">
+              <CreditCard size={15} color="var(--green)" /> Register {!isPro && <span className="ht-mono text-xs" style={{ color:"var(--cyan)" }}>PRO</span>}
             </button>
-            <button onClick={() => { setTab("portfolio"); if (!isPro && portfolios.length >= FREE_LIMITS.cardPortfolios) { gate("Unlimited portfolios"); return; } setNewPortfolioOpen(true); }} className="ht-input rounded-xl py-3" style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4 }}>
-              <Plus size={16} /><span style={{ fontSize:12, fontWeight:600 }}>New</span>
+            <button onClick={() => { if (!gate(STORE_META.kiosk.label)) return; setTab("shop"); setStoreView("kiosk"); }} className="ht-input rounded-xl px-4 py-2.5 flex-shrink-0 flex items-center gap-2 text-sm font-semibold">
+              <ImageIcon size={15} color="var(--amber)" /> Kiosk {!isPro && <span className="ht-mono text-xs" style={{ color:"var(--cyan)" }}>PRO</span>}
+            </button>
+            <button onClick={() => { setTab("tools"); setToolsView("calculator"); }} className="ht-input rounded-xl px-4 py-2.5 flex-shrink-0 flex items-center gap-2 text-sm font-semibold">
+              <CalcIcon size={15} color="var(--muted)" /> Calc
+            </button>
+            <button onClick={() => { setTab("portfolio"); if (!isPro && portfolios.length >= FREE_LIMITS.cardPortfolios) { gate("Unlimited portfolios"); return; } setNewPortfolioOpen(true); }} className="ht-btn-primary rounded-xl px-4 py-2.5 flex-shrink-0 flex items-center gap-2 text-sm font-semibold">
+              <Plus size={15} /> New Portfolio
             </button>
           </div>
 
@@ -2348,7 +2356,10 @@ export default function HoloHQApp() {
                 <div key={`${r.name}-${r.set}`} className="ht-card p-3 flex items-center justify-between">
                   <div className="flex items-center gap-2.5 min-w-0" onClick={() => openCardDetail(r)} style={{ cursor: "pointer" }}>
                     <span className="ht-mono text-xs font-semibold flex-shrink-0" style={{ color: "var(--muted)", width: 14 }}>{i + 1}</span>
-                    <CatDot category={r.category} />
+                    {(() => { const img = findCatalogImage(r.name, r.set); return img
+                      ? <img src={img} alt={r.name} style={{ width:30, height:42, objectFit:"contain", flexShrink:0, borderRadius:4, background:"var(--panel-2)" }} onError={e=>e.target.style.display="none"} />
+                      : <CatDot category={r.category} />;
+                    })()}
                     <div className="min-w-0">
                       <div className="text-sm font-medium truncate">{r.name}</div>
                       <div className="text-xs truncate" style={{ color: "var(--muted)" }}>{r.set}</div>
@@ -2745,7 +2756,10 @@ export default function HoloHQApp() {
                       <div key={r.id} onClick={() => openCardDetail(r)} className="ht-card p-3 flex items-center justify-between" style={{ cursor: "pointer" }}>
                         <div className="flex items-center gap-2.5 min-w-0">
                           <span className="ht-mono text-xs font-semibold flex-shrink-0" style={{ color: "var(--muted)", width: 14 }}>{i + 1}</span>
-                          <CatDot category={r.category} />
+                          {(() => { const img = findCatalogImage(r.name, r.set); return img
+                            ? <img src={img} alt={r.name} style={{ width:30, height:42, objectFit:"contain", flexShrink:0, borderRadius:4, background:"var(--panel-2)" }} onError={e=>e.target.style.display="none"} />
+                            : <CatDot category={r.category} />;
+                          })()}
                           <div className="min-w-0">
                             <div className="text-sm font-medium truncate">{r.name}</div>
                             <div className="text-xs truncate" style={{ color: "var(--muted)" }}>{r.condition} · {r.portfolioName}</div>
@@ -2983,25 +2997,64 @@ export default function HoloHQApp() {
             </button>
           </div>
 
-          {activePortfolio.rows.length > 3 && (
-            <div className="px-4 mb-3">
-              <input value={portfolioDetailSearch} onChange={(e) => setPortfolioDetailSearch(e.target.value)}
-                placeholder="Search this portfolio..." className="ht-input rounded-lg px-3 py-2.5 text-sm w-full" />
+          {/* search + sort + view toggle */}
+          <div className="px-4 mb-3 flex gap-2">
+            <input value={portfolioDetailSearch} onChange={(e) => setPortfolioDetailSearch(e.target.value)}
+              placeholder="Search..." className="ht-input rounded-lg px-3 py-2 text-sm flex-1" />
+            <select value={portfolioDetailSort} onChange={e => setPortfolioDetailSort(e.target.value)}
+              className="ht-input rounded-lg px-2 py-2 text-xs flex-shrink-0">
+              <option value="name" style={{ background:"var(--panel-2)" }}>A–Z</option>
+              <option value="priceHigh" style={{ background:"var(--panel-2)" }}>Price ↓</option>
+              <option value="priceLow" style={{ background:"var(--panel-2)" }}>Price ↑</option>
+              <option value="profit" style={{ background:"var(--panel-2)" }}>Profit</option>
+              <option value="trend" style={{ background:"var(--panel-2)" }}>Trending</option>
+            </select>
+            <div className="flex rounded-lg overflow-hidden flex-shrink-0" style={{ border:"1px solid var(--line)" }}>
+              <button onClick={() => setPortfolioViewMode("list")} className="px-2.5 py-2" style={{ background: portfolioViewMode==="list" ? "var(--purple)" : "var(--panel-2)" }}>
+                <Layers size={14} color={portfolioViewMode==="list" ? "#fff" : "var(--muted)"} />
+              </button>
+              <button onClick={() => setPortfolioViewMode("grid")} className="px-2.5 py-2" style={{ background: portfolioViewMode==="grid" ? "var(--purple)" : "var(--panel-2)" }}>
+                <LayoutGrid size={14} color={portfolioViewMode==="grid" ? "#fff" : "var(--muted)"} />
+              </button>
             </div>
-          )}
+          </div>
 
-          <div className="px-4 flex flex-col gap-2 mb-6">
-            {activePortfolio.rows.filter(r => {
-              const q = portfolioDetailSearch.trim().toLowerCase();
-              if (!q) return true;
-              return r.name.toLowerCase().includes(q) || (r.set || "").toLowerCase().includes(q) || (r.condition || "").toLowerCase().includes(q);
-            }).map(r => {
+          <div className={portfolioViewMode === "grid" ? "px-4 grid grid-cols-2 gap-2 mb-6 tablet-cols-3" : "px-4 flex flex-col gap-2 mb-6"}>
+            {(() => {
+              let rows = activePortfolio.rows.filter(r => {
+                const q = portfolioDetailSearch.trim().toLowerCase();
+                if (!q) return true;
+                return r.name.toLowerCase().includes(q) || (r.set || "").toLowerCase().includes(q) || (r.condition || "").toLowerCase().includes(q);
+              });
+              if (portfolioDetailSort === "priceHigh") rows = [...rows].sort((a,b) => (b.price||0)-(a.price||0));
+              else if (portfolioDetailSort === "priceLow") rows = [...rows].sort((a,b) => (a.price||0)-(b.price||0));
+              else if (portfolioDetailSort === "profit") rows = [...rows].sort((a,b) => { const pa = a.costBasis!=null?(a.price-a.costBasis)*a.qty:0; const pb = b.costBasis!=null?(b.price-b.costBasis)*b.qty:0; return pb-pa; });
+              else if (portfolioDetailSort === "trend") rows = [...rows].sort((a,b) => (b.trendPct||0)-(a.trendPct||0));
+              else rows = [...rows].sort((a,b) => a.name.localeCompare(b.name));
+              return rows.map(r => {
               const profit = r.costBasis != null ? (r.price - r.costBasis) * r.qty : null;
+              const img = findCatalogImage(r.name, r.set);
+              if (portfolioViewMode === "grid") return (
+                <div key={r.id} className="ht-card overflow-hidden" onClick={() => openCardDetail(r)} style={{ cursor:"pointer", padding:0 }}>
+                  <div style={{ height:120, background:"var(--panel-2)", display:"flex", alignItems:"center", justifyContent:"center", position:"relative" }}>
+                    {img ? <img src={img} alt={r.name} style={{ maxHeight:110, maxWidth:"90%", objectFit:"contain", filter:"drop-shadow(0 4px 8px rgba(0,0,0,0.5))" }} onError={e=>e.target.style.display="none"} />
+                    : <Sparkles size={24} color="var(--muted)" />}
+                    <span className="ht-mono absolute" style={{ bottom:4, right:6, fontSize:10, color:"var(--cyan)", background:"rgba(10,9,18,0.8)", padding:"1px 4px", borderRadius:3 }}>{r.condition?.replace("Raw ","")}</span>
+                  </div>
+                  <div className="p-2.5">
+                    <div className="text-xs font-semibold truncate">{r.name}</div>
+                    <div className="text-xs truncate mb-1" style={{ color:"var(--muted)" }}>{r.set}</div>
+                    <div className="ht-mono text-sm font-bold" style={{ color:"var(--green)" }}>${r.price?.toFixed(2)}</div>
+                    {profit !== null && <div className="ht-mono text-xs" style={{ color: profit>=0?"var(--green)":"var(--red)" }}>{profit>=0?"+":"-"}${Math.abs(profit).toFixed(2)}</div>}
+                  </div>
+                </div>
+              );
               return (
                 <div key={r.id} className="ht-card p-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 min-w-0" onClick={() => openCardDetail(r)} style={{ cursor: "pointer" }}>
-                      <CatDot category={r.category} />
+                      {img ? <img src={img} alt={r.name} style={{ width:36, height:50, objectFit:"contain", flexShrink:0, borderRadius:4, background:"var(--panel-2)" }} onError={e=>e.target.style.display="none"} />
+                      : <CatDot category={r.category} />}
                       <div className="min-w-0">
                         <div className="text-sm font-medium truncate">{r.name}</div>
                         <div className="text-xs truncate" style={{ color: "var(--muted)" }}>{r.set} · {r.condition} · qty {r.qty}</div>
@@ -3050,9 +3103,9 @@ export default function HoloHQApp() {
                   )}
                 </div>
               );
-            })}
+            });
+          })()}
             {activePortfolio.rows.length === 0 && <p className="text-xs" style={{ color: "var(--muted)" }}>No cards yet — add some from Tools.</p>}
-            {activePortfolio.rows.length > 0 && portfolioDetailSearch.trim() && activePortfolio.rows.filter(r => { const q = portfolioDetailSearch.trim().toLowerCase(); return r.name.toLowerCase().includes(q) || (r.set || "").toLowerCase().includes(q) || (r.condition || "").toLowerCase().includes(q); }).length === 0 && <p className="text-xs" style={{ color: "var(--muted)" }}>No cards match "{portfolioDetailSearch.trim()}".</p>}
           </div>
         </div>
         );
