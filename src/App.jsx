@@ -885,6 +885,7 @@ export default function HoloHQApp() {
   const [labelView, setLabelView] = useState(false);
   const fileRef = useRef(null);
   const logoRef = useRef(null);
+  const profileLogoRef = useRef(null);
   const [labelSettings, setLabelSettings] = useState({
     sellerName: "Holo Relix", logoDataUrl: null, qrContent: "", showQr: false,
     roundMode: "none", roundIncrement: 0.25, adjustPct: 0, labelsPerRow: 1, showMeta: false,
@@ -1672,7 +1673,7 @@ export default function HoloHQApp() {
   useEffect(() => {
     if (!sbUser) return;
     const t = setTimeout(() => {
-      sbSave(sbUser.id, { portfolios, sealedPortfolios, watchlist, salesLog, userTier, profileName });
+      sbSave?.(sbUser?.id, { portfolios, sealedPortfolios, watchlist, salesLog, userTier, profileName });
     }, 2000);
     return () => clearTimeout(t);
   }, [sbUser, portfolios, sealedPortfolios, watchlist, salesLog, userTier, profileName]);
