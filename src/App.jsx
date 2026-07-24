@@ -3009,14 +3009,14 @@ export default function HoloHQApp() {
             <input value={portfolioDetailSearch} onChange={(e) => setPortfolioDetailSearch(e.target.value)}
               placeholder="Search this portfolio..." className="ht-input rounded-lg px-3 py-2 text-sm w-full" />
             {/* row 2: portfolio picker · sort · trade · export · view */}
-            <div style={{ display:"flex", gap:6, alignItems:"center", overflowX:"auto" }} className="ht-scroll">
+            <div style={{ display:"flex", gap:6, alignItems:"center" }}>
               {/* portfolio switcher */}
               <select value={activePortfolioId || ""} onChange={e => {
-                  if (e.target.value === "") { setActivePortfolioId(null); }
+                  if (e.target.value === "__all__") { setActivePortfolioId(null); setAllItemsOpen(true); }
                   else setActivePortfolioId(e.target.value);
                 }}
                 className="ht-input rounded-lg px-2 py-1.5 text-xs flex-shrink-0" style={{ maxWidth:130 }}>
-                <option value="" style={{ background:"var(--panel-2)" }}>All Portfolios</option>
+                <option value="__all__" style={{ background:"var(--panel-2)" }}>All Portfolios</option>
                 {portfolios.map(p => <option key={p.id} value={p.id} style={{ background:"var(--panel-2)" }}>{p.name}</option>)}
               </select>
               {/* sort */}
