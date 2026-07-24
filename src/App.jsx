@@ -710,6 +710,7 @@ export default function HoloHQApp() {
   const [chartRange, setChartRange] = useState("1mo");
   const [chartCondition, setChartCondition] = useState("Raw NM");
   const [gradeMode, setGradeMode] = useState("raw");
+  const [chartOpen, setChartOpen] = useState(true);
   const [cardAddPickerOpen, setCardAddPickerOpen] = useState(false);
   const [sealedAddPickerOpen, setSealedAddPickerOpen] = useState(false);
   const [detailAddConfirm, setDetailAddConfirm] = useState("");
