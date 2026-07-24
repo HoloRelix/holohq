@@ -1688,6 +1688,16 @@ export default function HoloHQApp() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, portfolios, sealedPortfolios, watchlist, salesLog, expenses, gradingSubs, wantList, team, labelSettings, profileName, profileUsername, profileEmail, posLinks, recentSearches, crossListings, repricingRules, toolsOrder, storeOrder, quickTools, userTier, colorMode, onboardingDone]);
 
+  // ---- cloud sync when logged in ----
+  useEffect(() => {
+    if (!supaUser) return;
+    const timer = setTimeout(() => {
+      const data = { portfolios, sealedPortfolios, watchlist, salesLog, userTier, profileName };
+      saveUserData(supaUser.id, data);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [supaUser, portfolios, sealedPortfolios, watchlist, salesLog, userTier, profileName]);
+
   const NAV = [
     { key: "home", label: "Home", icon: HomeIcon },
     { key: "search", label: "Search", icon: Search },
@@ -4956,6 +4966,28 @@ export default function HoloHQApp() {
               <button onClick={() => setCsvImportOpen(true)} className="ht-chip">Import</button>
             </div>
           </div>
+          {/* account / cloud sync */}
+          <div className="ht-card p-4">
+            {supaUser ? (
+              <div>
+                <div className="text-sm font-semibold mb-0.5 flex items-center gap-2">
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--green)" }} /> Signed in
+                </div>
+                <div className="text-xs mb-3" style={{ color: "var(--muted)" }}>{supaUser.email} · data syncs across all your devices</div>
+                <button onClick={() => signOut()} className="text-xs" style={{ color: "var(--red)" }}>Sign out</button>
+              </div>
+            ) : (
+              <div>
+                <div className="text-sm font-semibold mb-1">Cloud Sync</div>
+                <div className="text-xs mb-3" style={{ color: "var(--muted)" }}>Sign in to sync your portfolios across devices and back up securely.</div>
+                <div className="flex gap-2">
+                  <button onClick={() => setAuthView("login")} className="ht-chip flex-1 text-center">Sign In</button>
+                  <button onClick={() => setAuthView("signup")} className="ht-btn-primary rounded-lg px-4 py-2 text-xs font-semibold flex-1 text-center">Sign Up Free</button>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* referral */}
           <div className="ht-card p-4" style={{ background: "linear-gradient(145deg, rgba(139,92,246,0.12), rgba(45,212,232,0.05))" }}>
             <div className="text-sm font-semibold mb-1 flex items-center gap-2"><Gift size={15} color="var(--purple)" /> Refer a Friend</div>
