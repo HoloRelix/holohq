@@ -1665,6 +1665,8 @@ export default function HoloHQApp() {
             if (d.salesLog?.length) setSalesLog(d.salesLog);
             if (d.userTier) setUserTier(d.userTier);
             if (d.profileName) setProfileName(d.profileName);
+            if (d.profileUsername) setProfileUsername(d.profileUsername);
+            if (d.profileAvatar) setProfileAvatar(d.profileAvatar);
           } catch(e) {}
         }
       }
@@ -1676,10 +1678,10 @@ export default function HoloHQApp() {
   useEffect(() => {
     if (!sbUser) return;
     const t = setTimeout(() => {
-      sbSave?.(sbUser?.id, { portfolios, sealedPortfolios, watchlist, salesLog, userTier, profileName });
+      sbSave?.(sbUser?.id, { portfolios, sealedPortfolios, watchlist, salesLog, userTier, profileName, profileUsername, profileAvatar });
     }, 2000);
     return () => clearTimeout(t);
-  }, [sbUser, portfolios, sealedPortfolios, watchlist, salesLog, userTier, profileName]);
+  }, [sbUser, portfolios, sealedPortfolios, watchlist, salesLog, userTier, profileName, profileUsername, profileAvatar]);
 
   // ---- data persistence + multi-device sync (window.storage) ----
   const STORAGE_KEY = "holohq-data";
