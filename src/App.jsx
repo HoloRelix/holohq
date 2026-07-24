@@ -1673,7 +1673,7 @@ export default function HoloHQApp() {
   ];
 
   return (
-    <div className="ht-root" data-mode={colorMode} style={{ minHeight: "100vh", position: "relative", paddingBottom: 74, overflowX: "hidden" }}>
+    <div className="ht-root" data-mode={colorMode} style={{ minHeight: "100vh", width: "100%", position: "relative", paddingBottom: 74, overflowX: "hidden" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
         @media screen {
@@ -1695,7 +1695,9 @@ export default function HoloHQApp() {
           background: #0A0912;
           color: #F1EEFA;
           width: 100%;
+          min-width: 100%;
           overflow-x: hidden;
+          box-sizing: border-box;
         }
         .ht-mono { font-family:'JetBrains Mono', monospace; }
         .ht-display { font-family:'Bebas Neue', sans-serif; letter-spacing:0.04em; }
@@ -1732,6 +1734,12 @@ export default function HoloHQApp() {
           .no-print{ display:none !important; }
           .ht-root{ background:white !important; color:black !important; max-width:none !important; }
           .ht-label-sheet{ display:grid !important; grid-template-columns:repeat(var(--labels-per-row,5), 40mm); gap:1.5mm; padding:4mm; }
+        }
+        @media (min-width: 481px) {
+          .ht-root { font-size: 17px; }
+          .tablet-cols-3 { grid-template-columns: repeat(3, 1fr) !important; }
+          .tablet-cols-4 { grid-template-columns: repeat(4, 1fr) !important; }
+          .ht-card { border-radius: 16px; }
         }
               [data-mode="light"] {
           --void:#F4F2FB; --panel:#FFFFFF; --panel-2:#EEEAF8; --line:#D9D2EF;
@@ -2971,7 +2979,7 @@ export default function HoloHQApp() {
           {TOOL_CATEGORIES.map(cat => (
             <div key={cat.key} className="mb-4">
               <div className="text-xs font-semibold mb-2" style={{ color: "var(--muted)", letterSpacing: "0.06em" }}>{cat.label.toUpperCase()}</div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2 tablet-cols-3">
                 {toolsOrder[cat.key].map((toolKey, idx) => {
                   const meta = TOOL_META[toolKey];
                   if (!meta) return null;
