@@ -1604,7 +1604,7 @@ export default function HoloHQApp() {
   const buildBackupSnapshot = () => ({
     version: 1, exportedAt: new Date().toISOString(),
     portfolios, sealedPortfolios, watchlist, salesLog, expenses, gradingSubs, wantList, team,
-    labelSettings, profileName, profileUsername, profileEmail, posLinks, recentSearches, crossListings, repricingRules, toolsOrder, storeOrder, quickTools, userTier, colorMode, onboardingDone,
+    labelSettings, profileName, profileUsername, profileEmail, profileAvatar, posLinks, recentSearches, crossListings, repricingRules, toolsOrder, storeOrder, quickTools, userTier, colorMode, onboardingDone,
   });
   const exportFullBackup = () => {
     const blob = new Blob([JSON.stringify(buildBackupSnapshot(), null, 2)], { type: "application/json" });
@@ -1629,6 +1629,7 @@ export default function HoloHQApp() {
         if (data.labelSettings) setLabelSettings(data.labelSettings);
         if (data.profileName) setProfileName(data.profileName);
         if (data.profileUsername) setProfileUsername(data.profileUsername);
+        if (data.profileAvatar) setProfileAvatar(data.profileAvatar);
         if (data.toolsOrder) setToolsOrder(normalizeToolsOrder(data.toolsOrder));
         if (data.storeOrder) setStoreOrder([...data.storeOrder.filter(k => STORE_META[k]), ...Object.keys(STORE_META).filter(k => !data.storeOrder.includes(k))]);
         if (data.quickTools) setQuickTools(data.quickTools.filter(k => TOOL_META[k]));
@@ -1705,6 +1706,7 @@ export default function HoloHQApp() {
           if (data.labelSettings) setLabelSettings(data.labelSettings);
           if (data.profileName) setProfileName(data.profileName);
         if (data.profileUsername) setProfileUsername(data.profileUsername);
+        if (data.profileAvatar) setProfileAvatar(data.profileAvatar);
         if (data.toolsOrder) setToolsOrder(normalizeToolsOrder(data.toolsOrder));
         if (data.storeOrder) setStoreOrder([...data.storeOrder.filter(k => STORE_META[k]), ...Object.keys(STORE_META).filter(k => !data.storeOrder.includes(k))]);
         if (data.quickTools) setQuickTools(data.quickTools.filter(k => TOOL_META[k]));
@@ -1741,7 +1743,7 @@ export default function HoloHQApp() {
     }, 700);
     return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, portfolios, sealedPortfolios, watchlist, salesLog, expenses, gradingSubs, wantList, team, labelSettings, profileName, profileUsername, profileEmail, posLinks, recentSearches, crossListings, repricingRules, toolsOrder, storeOrder, quickTools, userTier, colorMode, onboardingDone]);
+  }, [hydrated, portfolios, sealedPortfolios, watchlist, salesLog, expenses, gradingSubs, wantList, team, labelSettings, profileName, profileUsername, profileEmail, posLinks, recentSearches, crossListings, repricingRules, toolsOrder, storeOrder, quickTools, userTier, colorMode, onboardingDone, profileAvatar]);
 
 
   const NAV = [
@@ -4922,6 +4924,31 @@ export default function HoloHQApp() {
                 className="ht-chip w-full text-center text-xs flex items-center justify-center gap-1.5">
                 <Settings2 size={12} /> Edit Profile
               </button>
+            )}
+          </div>
+
+          {/* account / cloud sync */}
+          <div className="ht-card p-4 mb-3">
+            {sbUser ? (
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <div style={{ width:8, height:8, borderRadius:"50%", background:"var(--green)", flexShrink:0 }} />
+                  <span className="text-sm font-semibold">Signed in</span>
+                </div>
+                <div className="text-xs mb-3" style={{ color:"var(--muted)" }}>{sbUser?.email}</div>
+                <button onClick={() => { sbSignOut(); setSbUser(null); }} className="ht-chip w-full text-center text-xs" style={{ color:"var(--red)", borderColor:"var(--red)" }}>
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <div>
+                <div className="text-sm font-semibold mb-1">Cloud Sync</div>
+                <div className="text-xs mb-3" style={{ color:"var(--muted)" }}>Sign in to sync your portfolios across devices and keep a secure backup.</div>
+                <div className="flex gap-2">
+                  <button onClick={() => { setAuthMode("login"); setAuthOpen(true); }} className="ht-chip flex-1 text-center text-xs">Sign In</button>
+                  <button onClick={() => { setAuthMode("signup"); setAuthOpen(true); }} className="ht-btn-primary rounded-lg py-2 text-xs font-semibold flex-1 text-center">Sign Up Free</button>
+                </div>
+              </div>
             )}
           </div>
 
