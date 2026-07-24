@@ -2098,8 +2098,11 @@ export default function HoloHQApp() {
               <p className="text-xs" style={{ color: "var(--muted)" }}>Welcome back, {profileName}</p>
               <h1 className="text-lg font-semibold mt-0.5">Your Portfolio</h1>
             </div>
-            <button onClick={() => setTab("profile")} className="rounded-full w-9 h-9 flex items-center justify-center flex-shrink-0" style={{ background: "var(--panel-2)", border: "1px solid var(--line)" }}>
-              <User size={16} color="var(--muted)" />
+            <button onClick={() => setTab("profile")} className="rounded-full flex-shrink-0 overflow-hidden" style={{ width: 36, height: 36, background: "var(--panel-2)", border: "2px solid var(--line)" }}>
+              {profileAvatar
+                ? <img src={profileAvatar} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}><User size={16} color="var(--muted)" /></div>
+              }
             </button>
           </div>
 
