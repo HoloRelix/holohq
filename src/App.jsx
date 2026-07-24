@@ -1203,6 +1203,9 @@ export default function HoloHQApp() {
     setCsvImportPortfolioId("");
   };
   const [profileName, setProfileName] = useState("Steezy");
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editUsername, setEditUsername] = useState("");
   const [profileUsername, setProfileUsername] = useState("steezy");
   const [profileAvatar, setProfileAvatar] = useState(null);
   const [profileEmail, setProfileEmail] = useState("");
@@ -4869,22 +4872,55 @@ export default function HoloHQApp() {
           )}
 
           {/* avatar + name */}
-          <div className="ht-card p-4 mb-3 flex items-center gap-3">
-            <button onClick={() => avatarRef.current?.click()} className="rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden" style={{ width: 52, height: 52, background: "var(--panel-2)", border: "1px solid var(--line)" }}>
-              {profileAvatar ? <img src={profileAvatar} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <User size={20} color="var(--muted)" />}
-            </button>
-            <input ref={avatarRef} type="file" accept="image/*" className="hidden" onChange={(e) => {
-              const f = e.target.files[0]; if (!f) return;
-              const reader = new FileReader(); reader.onload = (ev) => setProfileAvatar(ev.target.result); reader.readAsDataURL(f);
-            }} />
-            <div className="flex-1 min-w-0">
-              <input value={profileName} onChange={(e) => setProfileName(e.target.value)} className="bg-transparent outline-none text-sm font-semibold w-full" style={{ color: "var(--text)" }} />
-              <div className="flex items-center gap-0.5">
-                <span className="text-xs" style={{ color: "var(--cyan)" }}>@</span>
-                <input value={profileUsername} onChange={(e) => setProfileUsername(e.target.value.replace(/[^a-zA-Z0-9_\.]/g, "").toLowerCase())} placeholder="username" className="bg-transparent outline-none text-xs w-full" style={{ color: "var(--cyan)" }} />
+          <div className="ht-card p-4 mb-3">
+            <div className="flex items-center gap-3 mb-3">
+              {/* avatar */}
+              <div className="relative flex-shrink-0">
+                <button onClick={() => avatarRef.current?.click()} className="rounded-full flex items-center justify-center overflow-hidden" style={{ width: 64, height: 64, background: "var(--panel-2)", border: "2px solid var(--line)" }}>
+                  {profileAvatar ? <img src={profileAvatar} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <User size={24} color="var(--muted)" />}
+                </button>
+                <button onClick={() => avatarRef.current?.click()} className="absolute rounded-full flex items-center justify-center" style={{ bottom: -2, right: -2, width: 22, height: 22, background: "var(--purple)", border: "2px solid var(--panel)" }}>
+                  <Settings2 size={11} color="#fff" />
+                </button>
               </div>
-              <button onClick={() => avatarRef.current?.click()} className="text-xs" style={{ color: "var(--muted)" }}>Change photo</button>
+              <input ref={avatarRef} type="file" accept="image/*" className="hidden" onChange={(e) => {
+                const f = e.target.files[0]; if (!f) return;
+                const reader = new FileReader(); reader.onload = (ev) => setProfileAvatar(ev.target.result); reader.readAsDataURL(f);
+              }} />
+              {/* name display / edit */}
+              {editingProfile ? (
+                <div className="flex-1 min-w-0">
+                  <input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Your name" className="ht-input rounded-lg px-3 py-2 text-sm w-full mb-2" />
+                  <div className="flex items-center gap-1.5 ht-input rounded-lg px-3 py-2">
+                    <span className="text-xs font-semibold" style={{ color: "var(--cyan)" }}>@</span>
+                    <input value={editUsername} onChange={e => setEditUsername(e.target.value.replace(/[^a-zA-Z0-9_\.]/g, "").toLowerCase())} placeholder="username" className="bg-transparent outline-none text-xs flex-1" style={{ color: "var(--cyan)" }} />
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 min-w-0">
+                  <div className="text-base font-semibold">{profileName || "Your Name"}</div>
+                  <div className="text-xs" style={{ color: "var(--cyan)" }}>@{profileUsername || "username"}</div>
+                  <div className="text-xs mt-1" style={{ color: "var(--muted)" }}>Tap Edit to update your profile</div>
+                </div>
+              )}
             </div>
+            {/* edit / save buttons */}
+            {editingProfile ? (
+              <div className="flex gap-2">
+                <button onClick={() => { setEditingProfile(false); }} className="ht-chip flex-1 text-center text-xs">Cancel</button>
+                <button onClick={() => {
+                  if (editName.trim()) setProfileName(editName.trim());
+                  if (editUsername.trim()) setProfileUsername(editUsername.trim());
+                  setEditingProfile(false);
+                  haptic(40);
+                }} className="ht-btn-primary rounded-lg py-2 text-xs font-semibold flex-1 text-center">Save Changes</button>
+              </div>
+            ) : (
+              <button onClick={() => { setEditName(profileName); setEditUsername(profileUsername); setEditingProfile(true); }}
+                className="ht-chip w-full text-center text-xs flex items-center justify-center gap-1.5">
+                <Settings2 size={12} /> Edit Profile
+              </button>
+            )}
           </div>
 
           {/* security */}
@@ -4985,22 +5021,48 @@ export default function HoloHQApp() {
         </div>
       )}
 
-      {/* ============ AUTH MODAL ============ */}
+      {/* ============ AUTH PAGE ============ */}
       {authOpen && (
-        <div style={{ position:"fixed", inset:0, zIndex:70, background:"rgba(5,4,10,0.9)", display:"flex", alignItems:"flex-end", justifyContent:"center" }} onClick={() => { setAuthOpen(false); setAuthError(""); }}>
-          <div onClick={e => e.stopPropagation()} className="ht-fade" style={{ width:"100%", maxWidth:480, background:"var(--panel)", borderRadius:"20px 20px 0 0", border:"1px solid var(--line)", padding:24, paddingBottom:40 }}>
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20 }}>
-              <h2 style={{ fontSize:16, fontWeight:700 }}>{authMode === "login" ? "Sign In" : "Create Account"}</h2>
-              <button onClick={() => { setAuthOpen(false); setAuthError(""); }}><X size={18} color="var(--muted)" /></button>
-            </div>
-            <input value={authEmail} onChange={e => setAuthEmail(e.target.value)} placeholder="Email" type="email" className="ht-input rounded-lg px-3 py-3 text-sm w-full mb-3" />
-            <input value={authPass} onChange={e => setAuthPass(e.target.value)} placeholder="Password" type="password" className="ht-input rounded-lg px-3 py-3 text-sm w-full mb-3" onKeyDown={e => e.key === "Enter" && handleAuth()} />
-            {authError && <p className="text-xs mb-3" style={{ color:"var(--red)" }}>{authError}</p>}
-            <button disabled={authLoading} onClick={handleAuth} className="ht-btn-primary rounded-xl py-3.5 text-sm font-bold w-full mb-3">
-              {authLoading ? "Please wait…" : authMode === "login" ? "Sign In" : "Create Account"}
+        <div className="ht-fade" style={{ position:"fixed", inset:0, zIndex:70, background:"var(--void)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:24 }}>
+          {/* header */}
+          <div className="text-center mb-8">
+            <div className="ht-display" style={{ fontSize:42, background:"linear-gradient(90deg, var(--purple), var(--cyan))", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>HOLOHQ</div>
+            <p className="text-sm mt-1" style={{ color:"var(--muted)" }}>Your card business, all in one place</p>
+          </div>
+
+          {/* toggle */}
+          <div className="flex rounded-xl p-1 mb-6" style={{ background:"var(--panel-2)", width:"100%", maxWidth:400 }}>
+            <button onClick={() => { setAuthMode("login"); setAuthError(""); }} className="flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all"
+              style={{ background: authMode === "login" ? "var(--purple)" : "transparent", color: authMode === "login" ? "#fff" : "var(--muted)" }}>
+              Sign In
             </button>
-            <button onClick={() => { setAuthMode(m => m === "login" ? "signup" : "login"); setAuthError(""); }} className="text-xs w-full text-center" style={{ color:"var(--muted)" }}>
-              {authMode === "login" ? "Don't have an account? Sign up free" : "Already have an account? Sign in"}
+            <button onClick={() => { setAuthMode("signup"); setAuthError(""); }} className="flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all"
+              style={{ background: authMode === "signup" ? "var(--purple)" : "transparent", color: authMode === "signup" ? "#fff" : "var(--muted)" }}>
+              Create Account
+            </button>
+          </div>
+
+          {/* form */}
+          <div style={{ width:"100%", maxWidth:400 }}>
+            <div className="ht-card p-6 mb-4">
+              <h2 className="text-lg font-bold mb-1">{authMode === "login" ? "Welcome back" : "Get started free"}</h2>
+              <p className="text-xs mb-5" style={{ color:"var(--muted)" }}>
+                {authMode === "login" ? "Sign in to sync your portfolios across devices." : "Create an account to back up and sync your data."}
+              </p>
+              <label className="text-xs font-semibold mb-1 block" style={{ color:"var(--muted)" }}>EMAIL</label>
+              <input value={authEmail} onChange={e => setAuthEmail(e.target.value)} placeholder="you@example.com" type="email"
+                className="ht-input rounded-lg px-3 py-3 text-sm w-full mb-3" autoComplete="email" />
+              <label className="text-xs font-semibold mb-1 block" style={{ color:"var(--muted)" }}>PASSWORD</label>
+              <input value={authPass} onChange={e => setAuthPass(e.target.value)} placeholder={authMode === "signup" ? "Choose a strong password" : "Your password"} type="password"
+                className="ht-input rounded-lg px-3 py-3 text-sm w-full mb-4" autoComplete={authMode === "login" ? "current-password" : "new-password"}
+                onKeyDown={e => e.key === "Enter" && handleAuth()} />
+              {authError && <div className="rounded-lg px-3 py-2 mb-3 text-xs" style={{ background:"rgba(248,113,113,0.12)", color:"var(--red)", border:"1px solid rgba(248,113,113,0.3)" }}>{authError}</div>}
+              <button disabled={authLoading} onClick={handleAuth} className="ht-btn-primary rounded-xl py-3.5 text-sm font-bold w-full">
+                {authLoading ? "Please wait…" : authMode === "login" ? "Sign In" : "Create Account"}
+              </button>
+            </div>
+            <button onClick={() => { setAuthOpen(false); setAuthError(""); }} className="text-xs w-full text-center" style={{ color:"var(--muted)" }}>
+              Continue without account
             </button>
           </div>
         </div>
