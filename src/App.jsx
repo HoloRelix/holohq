@@ -1689,7 +1689,6 @@ export default function HoloHQApp() {
   }, [hydrated, portfolios, sealedPortfolios, watchlist, salesLog, expenses, gradingSubs, wantList, team, labelSettings, profileName, profileUsername, profileEmail, posLinks, recentSearches, crossListings, repricingRules, toolsOrder, storeOrder, quickTools, userTier, colorMode, onboardingDone]);
 
   useEffect(() => {
-    if (!supaUser || !supabase) return;
     const t = setTimeout(() => saveUserData(supaUser.id, { portfolios, sealedPortfolios, watchlist, salesLog, userTier, profileName }), 2000);
     return () => clearTimeout(t);
   }, [supaUser, portfolios, sealedPortfolios, watchlist, salesLog, userTier, profileName]);
