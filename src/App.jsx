@@ -3004,11 +3004,12 @@ export default function HoloHQApp() {
           </div>
 
           {/* search + sort + view toggle */}
-          <div className="px-4 mb-3 flex gap-2">
+          <div className="px-4 mb-3" style={{ display:"flex", flexDirection:"column", gap:8 }}>
             <input value={portfolioDetailSearch} onChange={(e) => setPortfolioDetailSearch(e.target.value)}
-              placeholder="Search..." className="ht-input rounded-lg px-3 py-2 text-sm flex-1" />
+              placeholder="Search..." className="ht-input rounded-lg px-3 py-2 text-sm w-full" />
+            <div style={{ display:"flex", gap:8 }}>
             <select value={portfolioDetailSort} onChange={e => setPortfolioDetailSort(e.target.value)}
-              className="ht-input rounded-lg px-2 py-2 text-xs flex-shrink-0">
+              className="ht-input rounded-lg px-2 py-2 text-xs flex-1" style={{ minWidth:0 }}>
               <option value="valueHigh" style={{ background:"var(--panel-2)" }}>Highest Value</option>
               <option value="priceLow" style={{ background:"var(--panel-2)" }}>Price: Low to High</option>
               <option value="priceHigh" style={{ background:"var(--panel-2)" }}>Price: High to Low</option>
@@ -3027,6 +3028,7 @@ export default function HoloHQApp() {
               <button onClick={() => setPortfolioViewMode("grid")} className="px-2.5 py-2" style={{ background: portfolioViewMode==="grid" ? "var(--purple)" : "var(--panel-2)" }}>
                 <LayoutGrid size={14} color={portfolioViewMode==="grid" ? "#fff" : "var(--muted)"} />
               </button>
+            </div>
             </div>
           </div>
 
