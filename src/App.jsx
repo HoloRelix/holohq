@@ -3260,6 +3260,15 @@ export default function HoloHQApp() {
                 </div>
               </div>
 
+              <button onClick={() => {
+                if (!certResult?.valid) return;
+                const nameMode = ["basketball","football","baseball"].includes(certResult.category) ? "double" : "single";
+                const row = makeRow(certResult.subject, certResult.brand, `PSA ${certResult.grade}`, 1, nameMode, certResult.category);
+                openCardDetail(row);
+              }} className="ht-input rounded-lg py-2.5 text-sm font-semibold w-full flex items-center justify-center gap-2 mb-2">
+                <Layers size={14} /> Add to Portfolio
+              </button>
+
               <button onClick={addCertToPricer} className="ht-btn-primary rounded-lg py-2.5 text-sm font-semibold w-full flex items-center justify-center gap-2">
                 <Tag size={14} /> Add to Price &amp; Label
               </button>
