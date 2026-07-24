@@ -1688,20 +1688,6 @@ export default function HoloHQApp() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, portfolios, sealedPortfolios, watchlist, salesLog, expenses, gradingSubs, wantList, team, labelSettings, profileName, profileUsername, profileEmail, posLinks, recentSearches, crossListings, repricingRules, toolsOrder, storeOrder, quickTools, userTier, colorMode, onboardingDone]);
 
-  useEffect(() => {
-    const t = setTimeout(() => saveUserData(supaUser.id, { portfolios, sealedPortfolios, watchlist, salesLog, userTier, profileName }), 2000);
-    return () => clearTimeout(t);
-  }, [supaUser, portfolios, sealedPortfolios, watchlist, salesLog, userTier, profileName]);
-
-  // ---- cloud sync when logged in ----
-  useEffect(() => {
-    if (!supaUser) return;
-    const timer = setTimeout(() => {
-      const data = { portfolios, sealedPortfolios, watchlist, salesLog, userTier, profileName };
-      saveUserData(supaUser.id, data);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, [supaUser, portfolios, sealedPortfolios, watchlist, salesLog, userTier, profileName]);
 
   const NAV = [
     { key: "home", label: "Home", icon: HomeIcon },
@@ -4987,49 +4973,12 @@ export default function HoloHQApp() {
           </div>
           {/* account / cloud sync */}
           <div className="ht-card p-4">
-            {supaUser ? (
-              <div>
-                <div className="text-sm font-semibold mb-0.5 flex items-center gap-2">
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--green)" }} /> Signed in
-                </div>
-                <div className="text-xs mb-3" style={{ color: "var(--muted)" }}>{supaUser.email} · data syncs across all your devices</div>
-                <button onClick={() => signOut()} className="text-xs" style={{ color: "var(--red)" }}>Sign out</button>
-              </div>
-            ) : (
-              <div>
-                <div className="text-sm font-semibold mb-1">Cloud Sync</div>
-                <div className="text-xs mb-3" style={{ color: "var(--muted)" }}>Sign in to sync your portfolios across devices and back up securely.</div>
-                <div className="flex gap-2">
-                  <button onClick={() => setAuthView("login")} className="ht-chip flex-1 text-center">Sign In</button>
-                  <button onClick={() => setAuthView("signup")} className="ht-btn-primary rounded-lg px-4 py-2 text-xs font-semibold flex-1 text-center">Sign Up Free</button>
-                </div>
-              </div>
-            )}
+            <div className="text-sm font-semibold mb-1">Cloud Sync</div>
+            <div className="text-xs" style={{ color:"var(--muted)" }}>Account sync coming soon — sign up to be notified.</div>
           </div>
 
-          {/* account */}
-          <div className="ht-card p-4">
-            {supaUser ? (
-              <div>
-                <div style={{ display:"flex", alignItems:"center", gap:8, fontSize:14, fontWeight:600, marginBottom:4 }}>
-                  <div style={{ width:8, height:8, borderRadius:"50%", background:"var(--green)" }} /> Signed in
-                </div>
-                <div className="text-xs mb-3" style={{ color:"var(--muted)" }}>{supaUser.email} · syncing across devices</div>
-                <button onClick={() => signOut()} className="text-xs" style={{ color:"var(--red)" }}>Sign out</button>
-              </div>
-            ) : (
-              <div>
-                <div className="text-sm font-semibold mb-1">Cloud Sync</div>
-                <div className="text-xs mb-3" style={{ color:"var(--muted)" }}>Sign in to sync your portfolios across devices and back up securely.</div>
-                <div style={{ display:"flex", gap:8 }}>
-                  <button onClick={() => setAuthView("login")} className="ht-chip" style={{ flex:1, textAlign:"center" }}>Sign In</button>
-                  <button onClick={() => setAuthView("signup")} className="ht-btn-primary rounded-lg px-4 py-2 text-xs font-semibold" style={{ flex:1, textAlign:"center" }}>Sign Up Free</button>
-                </div>
-              </div>
-            )}
-          </div>
 
-          {/* referral */}
+                    {/* referral */}
           <div className="ht-card p-4" style={{ background: "linear-gradient(145deg, rgba(139,92,246,0.12), rgba(45,212,232,0.05))" }}>
             <div className="text-sm font-semibold mb-1 flex items-center gap-2"><Gift size={15} color="var(--purple)" /> Refer a Friend</div>
             <p className="text-xs mb-3" style={{ color: "var(--muted)" }}>Share your code — your friend gets 1 month free, you get 1 month free when they subscribe.</p>
@@ -5049,34 +4998,8 @@ export default function HoloHQApp() {
       )}
 
 
-            {/* ============ AUTH MODAL ============ */}
-      {authView && (
-        <div style={{ position:"fixed", inset:0, zIndex:70, background:"rgba(5,4,10,0.9)", display:"flex", alignItems:"flex-end", justifyContent:"center" }} onClick={() => { setAuthView(null); setAuthError(""); }}>
-          <div onClick={e => e.stopPropagation()} className="ht-fade" style={{ width:"100%", maxWidth:480, background:"var(--panel)", borderRadius:"20px 20px 0 0", border:"1px solid var(--line)", padding:24, paddingBottom:40 }}>
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20 }}>
-              <h2 style={{ fontSize:16, fontWeight:700 }}>{authView === "login" ? "Sign In" : "Create Account"}</h2>
-              <button onClick={() => { setAuthView(null); setAuthError(""); }}><X size={18} color="var(--muted)" /></button>
-            </div>
-            <input value={authEmail} onChange={e => setAuthEmail(e.target.value)} placeholder="Email" type="email" className="ht-input rounded-lg px-3 py-3 text-sm w-full mb-3" />
-            <input value={authPassword} onChange={e => setAuthPassword(e.target.value)} placeholder="Password" type="password" className="ht-input rounded-lg px-3 py-3 text-sm w-full mb-3" />
-            {authError && <p className="text-xs mb-3" style={{ color:"var(--red)" }}>{authError}</p>}
-            <button disabled={authLoading} onClick={async () => {
-              setAuthLoading(true); setAuthError("");
-              const { error } = authView === "login" ? await signIn(authEmail, authPassword) : await signUp(authEmail, authPassword);
-              if (error) setAuthError(error.message);
-              else { setAuthView(null); setAuthEmail(""); setAuthPassword(""); }
-              setAuthLoading(false);
-            }} className="ht-btn-primary rounded-xl py-3.5 text-sm font-bold w-full mb-3">
-              {authLoading ? "Please wait…" : authView === "login" ? "Sign In" : "Create Account"}
-            </button>
-            <button onClick={() => setAuthView(authView === "login" ? "signup" : "login")} className="text-xs w-full text-center" style={{ color:"var(--muted)" }}>
-              {authView === "login" ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ============ ONBOARDING ============ */}
+      
+            {/* ============ ONBOARDING ============ */}
       {!onboardingDone && (
         <div style={{ position: "fixed", inset: 0, zIndex: 80, background: "rgba(5,4,10,0.97)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24 }}>
           <div className="ht-fade" style={{ maxWidth: 360, width: "100%", textAlign: "center" }}>
