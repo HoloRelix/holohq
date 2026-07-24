@@ -1765,51 +1765,47 @@ export default function HoloHQApp() {
             : { label: "Category", value: CATEGORY_LABEL[r.category] || r.category || "—" };
         return (
         <div className="ht-fade pb-2" style={{ position: "relative" }}>
-          {/* ── compact header: image + price side by side ── */}
-          <div className="px-4 pt-5 flex items-start gap-3">
-            <button onClick={() => setCardDetail(null)} className="flex-shrink-0 mt-1"><ArrowLeft size={18} /></button>
-            {/* card thumbnail — fixed width, tall */}
-            <div style={{ flexShrink: 0, width: 72 }}>
-              <CardImage name={r.name} set={r.set} imageUrl={r.image || r.largeImage || null} height={100}
-                style={{ borderRadius: 8, background: "var(--panel-2)" }} />
-            </div>
-            {/* price + meta to the right */}
+          {/* ── header: back + title + actions ── */}
+          <div className="px-4 pt-5 flex items-center gap-2 mb-3">
+            <button onClick={() => setCardDetail(null)} style={{ flexShrink: 0 }}><ArrowLeft size={18} /></button>
             <div className="min-w-0 flex-1">
-              <div className="text-sm font-semibold leading-snug mb-0.5 pr-16">{r.displayName || r.name}</div>
-              <div className="text-xs mb-2" style={{ color: "var(--muted)" }}>{r.set}{r.condition ? ` · ${r.condition}` : ""}</div>
-              <div className="ht-mono text-3xl font-bold leading-none">${(selectedPrice ?? 0).toFixed(2)}</div>
-              <div className="flex items-center gap-2 mt-1.5">
+              <div className="text-base font-semibold leading-snug truncate">{r.displayName || r.name}</div>
+              <div className="text-xs" style={{ color: "var(--muted)" }}>{r.set}</div>
+            </div>
+            <button onClick={() => toggleCardWatch(r)} className="rounded-full w-9 h-9 flex-shrink-0" style={{ display:"flex", alignItems:"center", justifyContent:"center", background: isCardWatched(r) ? "var(--cyan)" : "var(--panel-2)", border: "1px solid var(--line)" }}>
+              <Bell size={15} color={isCardWatched(r) ? "#0A0912" : "var(--muted)"} />
+            </button>
+            <button onClick={() => shareCard({ ...r, kind: "card" })} className="rounded-full w-9 h-9 flex-shrink-0" style={{ display:"flex", alignItems:"center", justifyContent:"center", background: "var(--panel-2)", border: "1px solid var(--line)" }}>
+              <Share2 size={15} color="var(--muted)" />
+            </button>
+          </div>
+
+          {/* ── card image + price side by side ── */}
+          <div className="px-4 flex gap-4 items-center mb-3">
+            <div style={{ flexShrink: 0, width: 110 }}>
+              <CardImage name={r.name} set={r.set} imageUrl={r.image || r.largeImage || null} height={155}
+                style={{ borderRadius: 10, background: "var(--panel-2)" }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              {r.condition && <div className="text-xs mb-2" style={{ color: "var(--muted)" }}>Owned as {r.condition}</div>}
+              <div className="ht-mono font-bold leading-none" style={{ fontSize: 34 }}>${(selectedPrice ?? 0).toFixed(2)}</div>
+              <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:6 }}>
                 <TrendTag pct={Math.round(changePct * 10) / 10} />
                 <span className="ht-mono text-xs" style={{ color: "var(--muted)" }}>{activeCondition.startsWith("Raw ") ? activeCondition.replace("Raw ","") : activeCondition}</span>
               </div>
-              {/* high / low / stat inline */}
-              <div className="flex items-center gap-3 mt-2">
+              <div style={{ display:"flex", gap:16, marginTop:10 }}>
                 <div><div className="text-xs" style={{ color: "var(--muted)" }}>High</div><div className="ht-mono text-xs font-semibold">${high.toFixed(2)}</div></div>
                 <div><div className="text-xs" style={{ color: "var(--muted)" }}>Low</div><div className="ht-mono text-xs font-semibold">${low.toFixed(2)}</div></div>
                 <div><div className="text-xs" style={{ color: "var(--muted)" }}>{thirdStat.label}</div><div className="ht-mono text-xs font-semibold">{thirdStat.value}</div></div>
               </div>
-            </div>
-            {/* action icons top-right */}
-            <div className="absolute" style={{ right: 16, top: 20, display: "flex", gap: 6 }}>
-              <button onClick={() => toggleCardWatch(r)} className="rounded-full w-8 h-8 flex items-center justify-center" style={{ background: isCardWatched(r) ? "var(--cyan)" : "var(--panel-2)", border: "1px solid var(--line)" }}>
-                <Bell size={14} color={isCardWatched(r) ? "#0A0912" : "var(--muted)"} />
-              </button>
-              <button onClick={() => shareCard({ ...r, kind: "card" })} className="rounded-full w-8 h-8 flex items-center justify-center" style={{ background: "var(--panel-2)", border: "1px solid var(--line)" }}>
-                <Share2 size={14} color="var(--muted)" />
-              </button>
+              {profit !== null && (
+                <div className="mt-2 text-xs" style={{ color: profit >= 0 ? "var(--green)" : "var(--red)" }}>
+                  P/L {profit >= 0 ? "+" : "-"}${Math.abs(profit).toFixed(2)}
+                </div>
+              )}
             </div>
           </div>
 
-          {profit !== null && (
-            <div className="px-4 mt-2">
-              <div className="ht-card p-2.5 flex items-center justify-between">
-                <span className="text-xs" style={{ color: "var(--muted)" }}>You paid ${r.costBasis.toFixed(2)} · P/L</span>
-                <span className="ht-mono text-xs font-semibold" style={{ color: profit >= 0 ? "var(--green)" : "var(--red)" }}>
-                  {profit >= 0 ? "+" : "-"}${Math.abs(profit).toFixed(2)}
-                </span>
-              </div>
-            </div>
-          )}
 
           {/* ── condition selector (compact pill row) ── */}
           <div className="px-4 mt-3 flex items-center gap-2">
