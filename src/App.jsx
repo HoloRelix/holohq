@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useMemo, useLayoutEffect, useEffect } from "react";
 import Papa from "papaparse";
+import { sbSignIn, sbSignUp, sbSignOut, sbSave, sbLoad, sbOnAuthChange } from "./supabase.js";
 
 import {
   Sparkles, Upload, Plus, Trash2, TrendingUp, TrendingDown, Download,
