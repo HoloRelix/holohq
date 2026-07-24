@@ -1017,8 +1017,34 @@ export default function HoloHQApp() {
   const runCertLookup = async () => {
     if (!certInput.trim() || certLoading) return;
     setCertLoading(true); setCertResult(null);
-    await new Promise(res => setTimeout(res, 500 + Math.random() * 400));
-    setCertResult(mockCertLookup(certInput));
+    try {
+      const res = await fetch(`/api/psa?cert=${encodeURIComponent(certInput.trim())}&endpoint=cert`);
+      const data = await res.json();
+      if (data?.PSACert) {
+        const c = data.PSACert;
+        setCertResult({
+          valid: true,
+          certNumber: c.CertNumber,
+          subject: c.Subject || c.Name || "Unknown",
+          brand: c.Brand || c.Year || "",
+          grade: c.CardGrade || c.Grade || "?",
+          gradeDesc: c.GradeDescription || "",
+          category: c.Category?.toLowerCase().includes("basketball") ? "basketball"
+            : c.Category?.toLowerCase().includes("football") ? "football"
+            : c.Category?.toLowerCase().includes("baseball") ? "baseball"
+            : c.Category?.toLowerCase().includes("one piece") ? "onepiece"
+            : "pokemon",
+          population: null,
+          source: "psa-live",
+        });
+      } else {
+        // Fallback to mock if API returns unexpected format
+        setCertResult(mockCertLookup(certInput));
+      }
+    } catch (e) {
+      // Network error — fall back to mock
+      setCertResult(mockCertLookup(certInput));
+    }
     setCertLoading(false);
   };
   const addCertToPricer = () => {
