@@ -1673,7 +1673,7 @@ export default function HoloHQApp() {
   ];
 
   return (
-    <div className="ht-root" data-mode={colorMode} style={{ minHeight: "100vh", width: "100%", position: "relative", overflowX: "hidden" }}>
+    <div className="ht-root" data-mode={colorMode} style={{ minHeight: "100vh", width: "100%", position: "relative", overflowX: "hidden", paddingBottom: 74 }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
         @media screen {
@@ -1742,9 +1742,7 @@ export default function HoloHQApp() {
           .ht-card { border-radius: 16px; }
         }
         @media (min-width: 768px) {
-          .desktop-sidebar { display: flex !important; }
-          .desktop-nav-hidden { display: none !important; }
-          .ht-root { padding-left: 200px; padding-bottom: 0 !important; }
+          .ht-root { padding-bottom: 80px; }
         }
               [data-mode="light"] {
           --void:#F4F2FB; --panel:#FFFFFF; --panel-2:#EEEAF8; --line:#D9D2EF;
@@ -5124,7 +5122,7 @@ export default function HoloHQApp() {
       )}
 
       {/* ============ BOTTOM NAV (mobile) ============ */}
-      <div className="no-print desktop-nav-hidden" style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: "100%", background: "var(--panel)", borderTop: "1px solid var(--line)", display: "flex", justifyContent: "space-around", padding: "8px 2px", zIndex: 10 }}>
+      <div className="no-print" style={{ position: "fixed", bottom: 0, left: 0, right: 0, width: "100%", background: "var(--panel)", borderTop: "1px solid var(--line)", display: "flex", justifyContent: "space-around", padding: "8px 2px", zIndex: 10 }}>
         {NAV.map(item => {
           const Icon = item.icon;
           const active = tab === item.key;
@@ -5138,21 +5136,7 @@ export default function HoloHQApp() {
         })}
       </div>
 
-      {/* ============ SIDEBAR NAV (desktop/tablet) ============ */}
-      <div className="no-print desktop-sidebar" style={{ display: "none", position: "fixed", left: 0, top: 0, bottom: 0, width: 200, background: "var(--panel)", borderRight: "1px solid var(--line)", flexDirection: "column", zIndex: 10, padding: "24px 0" }}>
-        <div className="ht-display" style={{ fontSize: 24, color: "var(--cyan)", padding: "0 20px 24px", letterSpacing: "0.05em" }}>HOLOHQ</div>
-        {NAV.map(item => {
-          const Icon = item.icon;
-          const active = tab === item.key;
-          return (
-            <button key={item.key} onClick={() => { setTab(item.key); setCardDetail(null); setSealedDetail(null); setCardAddPickerOpen(false); setSealedAddPickerOpen(false); if (item.key !== "portfolio") { setActivePortfolioId(null); setActiveSealedPortfolioId(null); setPortfolioSection("cards"); setAllItemsOpen(false); } if (item.key !== "tools") setToolsView("menu"); if (item.key !== "explore") setExploreView("menu"); if (item.key !== "shop") setStoreView("menu"); if (item.key !== "search") { setSearchFullView(false); } setLabelView(false); }}
-              style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 20px", color: active ? "var(--cyan)" : "var(--muted)", background: active ? "rgba(139,92,246,0.12)" : "transparent", borderLeft: active ? "3px solid var(--cyan)" : "3px solid transparent", fontWeight: active ? 600 : 400, fontSize: 14, width: "100%", textAlign: "left" }}>
-              <Icon size={18} />
-              <span>{item.label}</span>
-            </button>
-          );
-        })}
-      </div>
+
     </div>
   );
 }
