@@ -1037,13 +1037,13 @@ export default function HoloHQApp() {
           population: null,
           source: "psa-live",
         });
+      } else if (data?.error) {
+        setCertResult({ valid: false, error: data.error, source: "psa-error" });
       } else {
-        // Fallback to mock if API returns unexpected format
-        setCertResult(mockCertLookup(certInput));
+        setCertResult({ valid: false, error: `Unexpected response: ${JSON.stringify(data).slice(0, 100)}`, source: "psa-error" });
       }
     } catch (e) {
-      // Network error — fall back to mock
-      setCertResult(mockCertLookup(certInput));
+      setCertResult({ valid: false, error: `Connection error: ${e.message}`, source: "psa-error" });
     }
     setCertLoading(false);
   };
@@ -3199,7 +3199,7 @@ export default function HoloHQApp() {
 
           <div className="flex items-center gap-2 text-xs mb-4" style={{ color: "var(--muted)" }}>
             <span className="w-2 h-2 rounded-full inline-block" style={{ background: "var(--amber)" }} />
-            Simulated result — real lookups need a backend holding your PSA API token
+            {certResult?.source === "psa-live" ? "Live PSA data" : "Simulated result — real lookups need a backend holding your PSA API token"}
           </div>
 
           <div className="flex gap-2 mb-4">
