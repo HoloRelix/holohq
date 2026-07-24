@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useMemo, useLayoutEffect, useEffect } from "react";
 import Papa from "papaparse";
+
 import {
   Sparkles, Upload, Plus, Trash2, TrendingUp, TrendingDown, Download,
   Tag, Settings2, Printer, ArrowLeft, CheckSquare, Square, Image as ImageIcon,
@@ -1080,6 +1081,21 @@ export default function HoloHQApp() {
   const [feeShipping, setFeeShipping] = useState(0);
 
   // ---- Profile state ----
+  const [sbUser, setSbUser] = useState(null);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState("login");
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPass, setAuthPass] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const handleAuth = async () => {
+    setAuthLoading(true); setAuthError("");
+    const fn = authMode === "login" ? sbSignIn : sbSignUp;
+    const { error } = await fn(authEmail, authPass);
+    if (error) setAuthError(error.message);
+    else { setAuthOpen(false); setAuthEmail(""); setAuthPass(""); }
+    setAuthLoading(false);
+  };
   const [userTier, setUserTier] = useState("free");
   const isPro = userTier === "pro";
   const [paywallOpen, setPaywallOpen] = useState(false);
@@ -1627,6 +1643,38 @@ export default function HoloHQApp() {
     };
     reader.readAsText(file);
   };
+
+  // ---- Supabase auth listener ----
+  useEffect(() => {
+    const unsub = sbOnAuthChange(async (_event, session) => {
+      const user = session?.user ?? null;
+      setSbUser(user);
+      if (user) {
+        const cloud = await sbLoad(user.id);
+        if (cloud) {
+          try {
+            const d = typeof cloud === "string" ? JSON.parse(cloud) : cloud;
+            if (d.portfolios?.length) setPortfolios(d.portfolios);
+            if (d.sealedPortfolios?.length) setSealedPortfolios(d.sealedPortfolios);
+            if (d.watchlist?.length) setWatchlist(d.watchlist);
+            if (d.salesLog?.length) setSalesLog(d.salesLog);
+            if (d.userTier) setUserTier(d.userTier);
+            if (d.profileName) setProfileName(d.profileName);
+          } catch(e) {}
+        }
+      }
+    });
+    return unsub;
+  }, []);
+
+  // ---- cloud sync ----
+  useEffect(() => {
+    if (!sbUser) return;
+    const t = setTimeout(() => {
+      sbSave(sbUser.id, { portfolios, sealedPortfolios, watchlist, salesLog, userTier, profileName });
+    }, 2000);
+    return () => clearTimeout(t);
+  }, [sbUser, portfolios, sealedPortfolios, watchlist, salesLog, userTier, profileName]);
 
   // ---- data persistence + multi-device sync (window.storage) ----
   const STORAGE_KEY = "holohq-data";
@@ -4987,7 +5035,30 @@ export default function HoloHQApp() {
           </div>
 
 
-                    {/* referral */}
+                    {/* account */}
+          <div className="ht-card p-4">
+            {sbUser ? (
+              <div>
+                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:4 }}>
+                  <div style={{ width:8, height:8, borderRadius:"50%", background:"var(--green)", flexShrink:0 }} />
+                  <span className="text-sm font-semibold">Signed in</span>
+                </div>
+                <div className="text-xs mb-3" style={{ color:"var(--muted)" }}>{sbUser.email} · data syncs across all your devices</div>
+                <button onClick={() => sbSignOut()} className="text-xs" style={{ color:"var(--red)" }}>Sign out</button>
+              </div>
+            ) : (
+              <div>
+                <div className="text-sm font-semibold mb-1">Cloud Sync</div>
+                <div className="text-xs mb-3" style={{ color:"var(--muted)" }}>Sign in to sync your portfolios across devices and keep a secure backup.</div>
+                <div style={{ display:"flex", gap:8 }}>
+                  <button onClick={() => { setAuthMode("login"); setAuthOpen(true); }} className="ht-chip" style={{ flex:1, textAlign:"center" }}>Sign In</button>
+                  <button onClick={() => { setAuthMode("signup"); setAuthOpen(true); }} className="ht-btn-primary rounded-lg px-4 py-2 text-xs font-semibold" style={{ flex:1, textAlign:"center" }}>Sign Up Free</button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* referral */}
           <div className="ht-card p-4" style={{ background: "linear-gradient(145deg, rgba(139,92,246,0.12), rgba(45,212,232,0.05))" }}>
             <div className="text-sm font-semibold mb-1 flex items-center gap-2"><Gift size={15} color="var(--purple)" /> Refer a Friend</div>
             <p className="text-xs mb-3" style={{ color: "var(--muted)" }}>Share your code — your friend gets 1 month free, you get 1 month free when they subscribe.</p>
@@ -5008,7 +5079,28 @@ export default function HoloHQApp() {
 
 
       
-            {/* ============ ONBOARDING ============ */}
+            {/* ============ AUTH MODAL ============ */}
+      {authOpen && (
+        <div style={{ position:"fixed", inset:0, zIndex:70, background:"rgba(5,4,10,0.9)", display:"flex", alignItems:"flex-end", justifyContent:"center" }} onClick={() => { setAuthOpen(false); setAuthError(""); }}>
+          <div onClick={e => e.stopPropagation()} className="ht-fade" style={{ width:"100%", maxWidth:480, background:"var(--panel)", borderRadius:"20px 20px 0 0", border:"1px solid var(--line)", padding:24, paddingBottom:40 }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20 }}>
+              <h2 style={{ fontSize:16, fontWeight:700 }}>{authMode === "login" ? "Sign In" : "Create Account"}</h2>
+              <button onClick={() => { setAuthOpen(false); setAuthError(""); }}><X size={18} color="var(--muted)" /></button>
+            </div>
+            <input value={authEmail} onChange={e => setAuthEmail(e.target.value)} placeholder="Email" type="email" className="ht-input rounded-lg px-3 py-3 text-sm w-full mb-3" />
+            <input value={authPass} onChange={e => setAuthPass(e.target.value)} placeholder="Password" type="password" className="ht-input rounded-lg px-3 py-3 text-sm w-full mb-3" onKeyDown={e => e.key === "Enter" && handleAuth()} />
+            {authError && <p className="text-xs mb-3" style={{ color:"var(--red)" }}>{authError}</p>}
+            <button disabled={authLoading} onClick={handleAuth} className="ht-btn-primary rounded-xl py-3.5 text-sm font-bold w-full mb-3">
+              {authLoading ? "Please wait…" : authMode === "login" ? "Sign In" : "Create Account"}
+            </button>
+            <button onClick={() => { setAuthMode(m => m === "login" ? "signup" : "login"); setAuthError(""); }} className="text-xs w-full text-center" style={{ color:"var(--muted)" }}>
+              {authMode === "login" ? "Don't have an account? Sign up free" : "Already have an account? Sign in"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ============ ONBOARDING ============ */}
       {!onboardingDone && (
         <div style={{ position: "fixed", inset: 0, zIndex: 80, background: "rgba(5,4,10,0.97)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24 }}>
           <div className="ht-fade" style={{ maxWidth: 360, width: "100%", textAlign: "center" }}>

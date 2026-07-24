@@ -1,36 +1,35 @@
 import { createClient } from '@supabase/supabase-js'
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
+const url = import.meta.env.VITE_SUPABASE_URL
+const key = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+export const supabase = (url && key) ? createClient(url, key) : null
 
-// ---- Auth helpers ----
-export const signUp = (email, password) =>
-  supabase.auth.signUp({ email, password })
+export const sbSignUp = (email, pass) =>
+  supabase?.auth.signUp({ email, password: pass }) ?? Promise.resolve({ error: { message: 'Supabase not configured' } })
 
-export const signIn = (email, password) =>
-  supabase.auth.signInWithPassword({ email, password })
+export const sbSignIn = (email, pass) =>
+  supabase?.auth.signInWithPassword({ email, password: pass }) ?? Promise.resolve({ error: { message: 'Supabase not configured' } })
 
-export const signOut = () => supabase.auth.signOut()
+export const sbSignOut = () =>
+  supabase?.auth.signOut() ?? Promise.resolve({})
 
-export const getUser = () => supabase.auth.getUser()
-
-// ---- Data helpers ----
-// Save all user data as a single JSON blob (simple, fast, works great for this app)
-export const saveUserData = async (userId, data) => {
-  const { error } = await supabase
-    .from('user_data')
-    .upsert({ user_id: userId, data: data, updated_at: new Date().toISOString() }, 
-             { onConflict: 'user_id' })
-  return { error }
+export const sbSave = async (uid, data) => {
+  if (!supabase) return
+  await supabase.from('user_data').upsert(
+    { user_id: uid, data, updated_at: new Date().toISOString() },
+    { onConflict: 'user_id' }
+  )
 }
 
-export const loadUserData = async (userId) => {
-  const { data, error } = await supabase
-    .from('user_data')
-    .select('data')
-    .eq('user_id', userId)
-    .single()
-  return { data: data?.data, error }
+export const sbLoad = async (uid) => {
+  if (!supabase) return null
+  const { data } = await supabase.from('user_data').select('data').eq('user_id', uid).single()
+  return data?.data ?? null
+}
+
+export const sbOnAuthChange = (cb) => {
+  if (!supabase) return () => {}
+  const { data } = supabase.auth.onAuthStateChange(cb)
+  return () => data.subscription.unsubscribe()
 }
