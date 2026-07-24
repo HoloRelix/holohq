@@ -1771,9 +1771,16 @@ export default function HoloHQApp() {
           background: #0A0912;
           color: #F1EEFA;
           width: 100%;
-          min-width: 100%;
           overflow-x: hidden;
           box-sizing: border-box;
+        }
+        @media (min-width: 768px) {
+          .ht-root { font-size: 17px; }
+          .tablet-cols-3 { grid-template-columns: repeat(3, 1fr) !important; }
+          .tablet-cols-4 { grid-template-columns: repeat(4, 1fr) !important; }
+        }
+        @media (min-width: 1200px) {
+          .ht-root { font-size: 18px; max-width: 1400px; margin: 0 auto; }
         }
         .ht-mono { font-family:'JetBrains Mono', monospace; }
         .ht-display { font-family:'Bebas Neue', sans-serif; letter-spacing:0.04em; }
@@ -1811,15 +1818,7 @@ export default function HoloHQApp() {
           .ht-root{ background:white !important; color:black !important; max-width:none !important; }
           .ht-label-sheet{ display:grid !important; grid-template-columns:repeat(var(--labels-per-row,5), 40mm); gap:1.5mm; padding:4mm; }
         }
-        @media (min-width: 481px) {
-          .ht-root { font-size: 17px; }
-          .tablet-cols-3 { grid-template-columns: repeat(3, 1fr) !important; }
-          .tablet-cols-4 { grid-template-columns: repeat(4, 1fr) !important; }
-          .ht-card { border-radius: 16px; }
-        }
-        @media (min-width: 768px) {
-          .ht-root { padding-bottom: 80px; }
-        }
+
               [data-mode="light"] {
           --void:#F4F2FB; --panel:#FFFFFF; --panel-2:#EEEAF8; --line:#D9D2EF;
           --text:#14112B; --muted:#6B5F8A; --cyan:#6B2FD4; --purple:#8B2FC4; --amber:#B45309;
