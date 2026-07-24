@@ -4868,9 +4868,10 @@ export default function HoloHQApp() {
 
             <div className="text-xs font-semibold mb-1" style={{ color: "var(--muted)" }}>BUSINESS LOGO</div>
             <div className="flex items-center gap-2 mb-3">
-              <button onClick={() => logoRef.current?.click()} className="ht-input rounded-md px-3 py-2 text-xs flex items-center gap-1.5"><ImageIcon size={13} /> {labelSettings.logoDataUrl ? "Replace" : "Upload"}</button>
+              <button onClick={() => profileLogoRef.current?.click()} className="ht-input rounded-md px-3 py-2 text-xs flex items-center gap-1.5"><ImageIcon size={13} /> {labelSettings.logoDataUrl ? "Replace" : "Upload"}</button>
               {labelSettings.logoDataUrl && <><img src={labelSettings.logoDataUrl} alt="logo" style={{ height: 24, width: 24, background: "white", borderRadius: 4, objectFit: "contain" }} /><button onClick={() => setLabelSettings(s => ({ ...s, logoDataUrl: null }))}><X size={13} color="var(--muted)" /></button></>}
             </div>
+            <input ref={profileLogoRef} type="file" accept="image/*" className="hidden" onChange={(e) => { if (e.target.files[0]) handleLogoUpload(e.target.files[0]); e.target.value = ""; }} />
 
             <div className="text-xs font-semibold mb-2" style={{ color: "var(--muted)" }}>LABEL SIZE</div>
             <div className="flex items-center gap-2 mb-3">
