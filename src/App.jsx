@@ -2135,17 +2135,17 @@ export default function HoloHQApp() {
 
           {/* quick actions */}
           <div className="px-4 grid grid-cols-4 gap-2 mt-4">
-            <button onClick={() => setTab("portfolio")} className="ht-btn-primary rounded-xl py-3 flex flex-col items-center justify-center gap-1">
-              <Tag size={16} /><span className="text-xs font-semibold">Price</span>
+            <button onClick={() => setTab("portfolio")} className="ht-btn-primary rounded-xl py-3" style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4 }}>
+              <Tag size={16} /><span style={{ fontSize:12, fontWeight:600 }}>Price</span>
             </button>
-            <button onClick={() => setTab("search")} className="ht-input rounded-xl py-3 flex flex-col items-center justify-center gap-1">
-              <Search size={16} /><span className="text-xs font-semibold">Search</span>
+            <button onClick={() => setTab("search")} className="ht-input rounded-xl py-3" style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4 }}>
+              <Search size={16} /><span style={{ fontSize:12, fontWeight:600 }}>Search</span>
             </button>
-            <button onClick={() => { setTab("tools"); setToolsView("calculator"); }} className="ht-input rounded-xl py-3 flex flex-col items-center justify-center gap-1">
-              <CalcIcon size={16} /><span className="text-xs font-semibold">Calc</span>
+            <button onClick={() => { setTab("tools"); setToolsView("calculator"); }} className="ht-input rounded-xl py-3" style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4 }}>
+              <CalcIcon size={16} /><span style={{ fontSize:12, fontWeight:600 }}>Calc</span>
             </button>
-            <button onClick={() => { setTab("portfolio"); if (!isPro && portfolios.length >= FREE_LIMITS.cardPortfolios) { gate("Unlimited portfolios"); return; } setNewPortfolioOpen(true); }} className="ht-input rounded-xl py-3 flex flex-col items-center justify-center gap-1">
-              <Plus size={16} /><span className="text-xs font-semibold">New</span>
+            <button onClick={() => { setTab("portfolio"); if (!isPro && portfolios.length >= FREE_LIMITS.cardPortfolios) { gate("Unlimited portfolios"); return; } setNewPortfolioOpen(true); }} className="ht-input rounded-xl py-3" style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4 }}>
+              <Plus size={16} /><span style={{ fontSize:12, fontWeight:600 }}>New</span>
             </button>
           </div>
 
@@ -4967,7 +4967,7 @@ export default function HoloHQApp() {
               haptic(30);
               if (onboardingStep < ONBOARDING_STEPS.length - 1) setOnboardingStep(s => s + 1);
               else { setOnboardingDone(true); }
-            }} className="ht-btn-primary rounded-xl py-4 text-base font-bold w-full" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            }} className="ht-btn-primary rounded-xl py-4 w-full" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: 16, fontWeight: 700 }}>
               {onboardingStep < ONBOARDING_STEPS.length - 1 ? (<><span>Next</span><SkipForward size={16} /></>) : (<><span>Get Started</span><Play size={16} /></>)}
             </button>
             {onboardingStep > 0 && (
