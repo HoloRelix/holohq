@@ -2258,7 +2258,7 @@ export default function HoloHQApp() {
                 ? [...filtered].sort((a, b) => b.changePct - a.changePct)
                 : [...filtered].sort((a, b) => a.changePct - b.changePct);
               if (list.length === 0) return <p className="text-xs" style={{ color: "var(--muted)" }}>Nothing in this category yet.</p>;
-              return list.slice(0, 3).map((r, i) => (
+              return list.slice(0, 5).map((r, i) => (
                 <div key={`${r.name}-${r.set}`} className="ht-card p-3 flex items-center justify-between">
                   <div className="flex items-center gap-2.5 min-w-0" onClick={() => openCardDetail(r)} style={{ cursor: "pointer" }}>
                     <span className="ht-mono text-xs font-semibold flex-shrink-0" style={{ color: "var(--muted)", width: 14 }}>{i + 1}</span>
@@ -2287,7 +2287,7 @@ export default function HoloHQApp() {
                 ? [...filtered].sort((a, b) => b.changePct - a.changePct)
                 : [...filtered].sort((a, b) => a.changePct - b.changePct);
               if (list.length === 0) return <p className="text-xs" style={{ color: "var(--muted)" }}>Nothing in this category yet.</p>;
-              return list.slice(0, 3).map((t, i) => (
+              return list.slice(0, 5).map((t, i) => (
                 <div key={t.productName} className="ht-card p-3 flex items-center gap-3">
                   <div className="flex items-center gap-2.5 min-w-0 flex-1" onClick={() => openSealedDetail({ productName: t.productName, category: t.category, marketEach: t.price })} style={{ cursor: "pointer" }}>
                     <span className="ht-mono text-xs font-semibold flex-shrink-0" style={{ color: "var(--muted)", width: 14 }}>{i + 1}</span>
