@@ -2221,10 +2221,17 @@ export default function HoloHQApp() {
               </div>
               <div style={{ width: 1, height: 24, background: "var(--line)" }} />
               <div>
-                <div className="ht-mono text-sm font-semibold" style={{ color: grandTotalProfit >= 0 ? "var(--green)" : "var(--red)" }}>
-                  {grandTotalProfit >= 0 ? "+" : "-"}${Math.abs(grandTotalProfit).toFixed(2)}
+                <div className="ht-mono text-sm font-semibold" style={{ color: totalProfit >= 0 ? "var(--green)" : "var(--red)" }}>
+                  {totalProfit >= 0 ? "+" : "-"}${Math.abs(totalProfit).toFixed(2)}
                 </div>
-                <div className="text-xs" style={{ color: "var(--muted)" }}>Profit</div>
+                <div className="text-xs" style={{ color: "var(--muted)" }}>Cards P/L</div>
+              </div>
+              <div style={{ width: 1, height: 24, background: "var(--line)" }} />
+              <div>
+                <div className="ht-mono text-sm font-semibold" style={{ color: sealedTotalProfit >= 0 ? "var(--green)" : "var(--red)" }}>
+                  {sealedTotalProfit >= 0 ? "+" : "-"}${Math.abs(sealedTotalProfit).toFixed(2)}
+                </div>
+                <div className="text-xs" style={{ color: "var(--muted)" }}>Sealed P/L</div>
               </div>
             </div>
           </div>
@@ -2583,8 +2590,11 @@ export default function HoloHQApp() {
               </div>
               <div style={{ width: 1, height: 24, background: "var(--line)" }} />
               <div>
-                <div className="ht-mono text-sm font-semibold" style={{ color: (sealedValue - sealedCost) + totalProfit >= 0 ? "var(--green)" : "var(--red)" }}>
-                  {(sealedValue - sealedCost) + totalProfit >= 0 ? "+" : "-"}${Math.abs((sealedValue - sealedCost) + totalProfit).toFixed(2)}
+                <div className="ht-mono text-sm font-semibold" style={{ color: totalProfit >= 0 ? "var(--green)" : "var(--red)" }}>
+                  Cards {totalProfit >= 0 ? "+" : "-"}${Math.abs(totalProfit).toFixed(2)}
+                </div>
+                <div className="ht-mono text-xs" style={{ color: (sealedValue - sealedCost) >= 0 ? "var(--green)" : "var(--red)" }}>
+                  Sealed {(sealedValue - sealedCost) >= 0 ? "+" : "-"}${Math.abs(sealedValue - sealedCost).toFixed(2)}
                 </div>
                 <div className="text-xs" style={{ color: "var(--muted)" }}>Total Profit</div>
               </div>
