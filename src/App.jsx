@@ -3967,7 +3967,7 @@ export default function HoloHQApp() {
             <input value={searchQuery}
               onChange={(e) => { setSearchQuery(e.target.value); if (!e.target.value.trim()) { setSearchFullView(false); setLiveResults([]); } }}
               onKeyDown={(e) => { if (e.key === "Enter" && searchQuery.trim()) { setSearchFullView(true); e.target.blur(); } }}
-              placeholder="Search any Pokémon card by name..." className="ht-input rounded-lg px-3 py-3 text-sm w-full" />'"""[1:]
+              placeholder="Search any Pokémon card by name..." className="ht-input rounded-lg px-3 py-3 text-sm w-full" />
 
             {/* quick popup — only while typing, before Enter */}
             {!searchFullView && searchQuery.trim() && (
