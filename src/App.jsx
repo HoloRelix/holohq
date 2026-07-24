@@ -3008,21 +3008,39 @@ export default function HoloHQApp() {
             {/* row 1: search */}
             <input value={portfolioDetailSearch} onChange={(e) => setPortfolioDetailSearch(e.target.value)}
               placeholder="Search this portfolio..." className="ht-input rounded-lg px-3 py-2 text-sm w-full" />
-            {/* row 2: sort + view + actions */}
-            <div style={{ display:"flex", gap:6, alignItems:"center", flexWrap:"wrap" }}>
+            {/* row 2: portfolio picker · sort · trade · export · view */}
+            <div style={{ display:"flex", gap:6, alignItems:"center", overflowX:"auto" }} className="ht-scroll">
+              {/* portfolio switcher */}
+              <select value={activePortfolioId || ""} onChange={e => {
+                  if (e.target.value === "") { setActivePortfolioId(null); }
+                  else setActivePortfolioId(e.target.value);
+                }}
+                className="ht-input rounded-lg px-2 py-1.5 text-xs flex-shrink-0" style={{ maxWidth:130 }}>
+                <option value="" style={{ background:"var(--panel-2)" }}>All Portfolios</option>
+                {portfolios.map(p => <option key={p.id} value={p.id} style={{ background:"var(--panel-2)" }}>{p.name}</option>)}
+              </select>
+              {/* sort */}
               <select value={portfolioDetailSort} onChange={e => setPortfolioDetailSort(e.target.value)}
-                className="ht-input rounded-lg px-2 py-1.5 text-xs" style={{ flex:1, minWidth:120 }}>
+                className="ht-input rounded-lg px-2 py-1.5 text-xs flex-shrink-0" style={{ maxWidth:140 }}>
                 <option value="valueHigh" style={{ background:"var(--panel-2)" }}>Highest Value</option>
                 <option value="priceLow" style={{ background:"var(--panel-2)" }}>Price: Low to High</option>
                 <option value="priceHigh" style={{ background:"var(--panel-2)" }}>Price: High to Low</option>
-                <option value="trendUp" style={{ background:"var(--panel-2)" }}>% Change: Low to High</option>
-                <option value="trendDown" style={{ background:"var(--panel-2)" }}>% Change: High to Low</option>
+                <option value="trendUp" style={{ background:"var(--panel-2)" }}>% Change: Low → High</option>
+                <option value="trendDown" style={{ background:"var(--panel-2)" }}>% Change: High → Low</option>
                 <option value="name" style={{ background:"var(--panel-2)" }}>Name: A to Z</option>
                 <option value="nameZ" style={{ background:"var(--panel-2)" }}>Name: Z to A</option>
-                <option value="newest" style={{ background:"var(--panel-2)" }}>Date: Newest First</option>
-                <option value="oldest" style={{ background:"var(--panel-2)" }}>Date: Oldest First</option>
+                <option value="newest" style={{ background:"var(--panel-2)" }}>Newest First</option>
+                <option value="oldest" style={{ background:"var(--panel-2)" }}>Oldest First</option>
                 <option value="profit" style={{ background:"var(--panel-2)" }}>Profit</option>
               </select>
+              {/* trade */}
+              <button onClick={() => { setTab("tools"); setToolsView("trade"); }} className="ht-chip flex-shrink-0 flex items-center gap-1" style={{ fontSize:11 }}>
+                <ArrowLeftRight size={12} /> Trade
+              </button>
+              {/* export */}
+              <button onClick={exportFullBackup} className="ht-chip flex-shrink-0 flex items-center gap-1" style={{ fontSize:11 }}>
+                <Download size={12} /> Export
+              </button>
               {/* list/grid toggle */}
               <div className="flex rounded-lg overflow-hidden flex-shrink-0" style={{ border:"1px solid var(--line)" }}>
                 <button onClick={() => setPortfolioViewMode("list")} className="px-2.5 py-1.5" style={{ background: portfolioViewMode==="list" ? "var(--purple)" : "var(--panel-2)" }}>
@@ -3032,14 +3050,6 @@ export default function HoloHQApp() {
                   <LayoutGrid size={13} color={portfolioViewMode==="grid" ? "#fff" : "var(--muted)"} />
                 </button>
               </div>
-              {/* trade analyzer */}
-              <button onClick={() => { setTab("tools"); setToolsView("trade"); }} className="ht-chip flex-shrink-0 flex items-center gap-1.5" style={{ fontSize:11 }}>
-                <ArrowLeftRight size={12} /> Trade
-              </button>
-              {/* export */}
-              <button onClick={exportFullBackup} className="ht-chip flex-shrink-0 flex items-center gap-1.5" style={{ fontSize:11 }}>
-                <Download size={12} /> Export
-              </button>
             </div>
           </div>
 
