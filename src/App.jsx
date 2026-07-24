@@ -4002,14 +4002,27 @@ export default function HoloHQApp() {
         <div className="ht-fade px-4 pt-6 pb-6">
           <h1 className="ht-display text-3xl leading-none mb-1">SEARCH</h1>
           <p className="text-xs mb-4" style={{ color: "var(--muted)" }}>
-            Live Pokémon TCG catalog · sealed products · or enter any custom card
+            Live Pokémon TCG catalog · sealed products · or enter a PSA cert number
           </p>
 
           <div className="relative mb-3">
             <input value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); if (!e.target.value.trim()) { setSearchFullView(false); setLiveResults([]); } }}
-              onKeyDown={(e) => { if (e.key === "Enter" && searchQuery.trim()) { setSearchFullView(true); e.target.blur(); } }}
-              placeholder="Search any Pokémon card by name..." className="ht-input rounded-lg px-3 py-3 text-sm w-full" />
+              onChange={(e) => { setSearchQuery(e.target.value); if (!e.target.value.trim()) { setSearchFullView(false); } }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && searchQuery.trim()) {
+                  // If all digits → treat as PSA cert number
+                  if (/^\d{5,10}$/.test(searchQuery.trim())) {
+                    setCertInput(searchQuery.trim());
+                    setTab("tools");
+                    setToolsView("psa");
+                    setTimeout(() => runCertLookup(), 100);
+                  } else {
+                    setSearchFullView(true);
+                  }
+                  e.target.blur();
+                }
+              }}
+              placeholder="Search cards or enter a PSA cert number..." className="ht-input rounded-lg px-3 py-3 text-sm w-full" />
 
             {/* quick popup — only while typing, before Enter */}
             {!searchFullView && searchQuery.trim() && (
