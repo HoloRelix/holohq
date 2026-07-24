@@ -3052,27 +3052,27 @@ export default function HoloHQApp() {
               const img = findCatalogImage(r.name, r.set);
               if (portfolioViewMode === "grid") return (
                 <div key={r.id} onClick={() => openCardDetail(r)}
-                  style={{ cursor:"pointer", background:"var(--panel)", border:"1px solid var(--line)", borderRadius:10, overflow:"hidden", aspectRatio:"63/88", display:"flex", flexDirection:"column", position:"relative" }}>
-                  {/* card image fills most of the slot */}
-                  <div style={{ flex:1, background:"var(--panel-2)", display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden" }}>
+                  style={{ cursor:"pointer", display:"flex", flexDirection:"column" }}>
+                  {/* pure card image slot — no text overlay */}
+                  <div style={{ position:"relative", background:"var(--panel-2)", borderRadius:8, overflow:"hidden", aspectRatio:"63/88" }}>
                     {img
-                      ? <img src={img} alt={r.name} style={{ width:"92%", height:"92%", objectFit:"contain" }} onError={e=>e.target.style.display="none"} />
-                      : <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}><Sparkles size={22} color="var(--muted)" /><span style={{ fontSize:9, color:"var(--muted)", textAlign:"center", padding:"0 4px" }}>{r.name}</span></div>
+                      ? <img src={img} alt={r.name} style={{ width:"100%", height:"100%", objectFit:"contain" }} onError={e=>e.target.style.display="none"} />
+                      : <div style={{ width:"100%", height:"100%", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4 }}><Sparkles size={20} color="var(--muted)" /><span style={{ fontSize:8, color:"var(--muted)", textAlign:"center", padding:"0 6px" }}>{r.name}</span></div>
                     }
+                    {/* condition badge — top right, small */}
+                    <span style={{ position:"absolute", top:3, right:3, fontFamily:"'JetBrains Mono', monospace", fontSize:8, fontWeight:700, color:"var(--cyan)", background:"rgba(10,9,18,0.88)", padding:"1px 4px", borderRadius:3, border:"1px solid rgba(45,212,232,0.3)" }}>
+                      {r.condition?.replace("Raw ","")}
+                    </span>
+                    {r.qty > 1 && <span style={{ position:"absolute", top:3, left:3, fontFamily:"'JetBrains Mono', monospace", fontSize:8, fontWeight:700, color:"#F1EEFA", background:"rgba(10,9,18,0.88)", padding:"1px 4px", borderRadius:3, border:"1px solid var(--line)" }}>×{r.qty}</span>}
                   </div>
-                  {/* price + name gradient overlay at bottom */}
-                  <div style={{ position:"absolute", bottom:0, left:0, right:0, background:"linear-gradient(to top, rgba(10,9,18,0.97) 0%, rgba(10,9,18,0.7) 60%, transparent 100%)", padding:"18px 6px 6px" }}>
-                    <div style={{ fontSize:9, fontWeight:600, color:"#F1EEFA", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", lineHeight:1.2 }}>{r.name}</div>
-                    <div style={{ fontFamily:"'JetBrains Mono', monospace", fontSize:11, fontWeight:700, color:"#34D399", marginTop:1 }}>${r.price?.toFixed(2)}</div>
+                  {/* info below the card */}
+                  <div style={{ padding:"4px 2px 0" }}>
+                    <div style={{ fontSize:10, fontWeight:600, color:"#F1EEFA", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{r.name}</div>
+                    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                      <span style={{ fontFamily:"'JetBrains Mono', monospace", fontSize:11, fontWeight:700, color:"#34D399" }}>${r.price?.toFixed(2)}</span>
+                      {profit !== null && <span style={{ fontFamily:"'JetBrains Mono', monospace", fontSize:9, fontWeight:600, color: profit>=0?"#34D399":"#F87171" }}>{profit>=0?"+":"-"}${Math.abs(profit).toFixed(0)}</span>}
+                    </div>
                   </div>
-                  {/* condition badge top-right */}
-                  <span style={{ position:"absolute", top:4, right:4, fontFamily:"'JetBrains Mono', monospace", fontSize:8, fontWeight:700, color:"var(--cyan)", background:"rgba(10,9,18,0.88)", padding:"1px 4px", borderRadius:3, border:"1px solid rgba(45,212,232,0.3)" }}>
-                    {r.condition?.replace("Raw ","")}
-                  </span>
-                  {/* qty badge top-left */}
-                  {r.qty > 1 && <span style={{ position:"absolute", top:4, left:4, fontFamily:"'JetBrains Mono', monospace", fontSize:8, fontWeight:700, color:"#F1EEFA", background:"rgba(10,9,18,0.88)", padding:"1px 4px", borderRadius:3, border:"1px solid var(--line)" }}>×{r.qty}</span>}
-                  {/* profit badge bottom-right if owned */}
-                  {profit !== null && <span style={{ position:"absolute", bottom:24, right:4, fontFamily:"'JetBrains Mono', monospace", fontSize:8, fontWeight:700, color: profit>=0?"#34D399":"#F87171" }}>{profit>=0?"+":"-"}${Math.abs(profit).toFixed(0)}</span>}
                 </div>
               );
               return (
