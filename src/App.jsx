@@ -2489,28 +2489,31 @@ export default function HoloHQApp() {
             );
           })()}
 
-          <div className="px-4 mb-2">
+          <div className="px-4 mb-3" style={{ display:"flex", flexDirection:"column", gap:8 }}>
             <input value={allItemsSearch} onChange={(e) => setAllItemsSearch(e.target.value)}
-              placeholder="Search your collection..." className="ht-input rounded-lg px-3 py-2.5 text-sm w-full" />
-          </div>
-
-          <div className="px-4 flex items-center gap-2 mb-3">
-            <div className="flex gap-2">
-              {[["all", "All"], ["cards", "Cards"], ["sealed", "Sealed"]].map(([k, label]) => (
-                <button key={k} onClick={() => setAllItemsFilter(k)} className={`ht-chip ${allItemsFilter === k ? "ht-chip-active" : ""}`}>{label}</button>
+              placeholder="Search your collection..." className="ht-input rounded-lg px-3 py-2 text-sm w-full" />
+            <div style={{ display:"flex", gap:6, alignItems:"center", width:"100%" }}>
+              {[["all","All"],["cards","Cards"],["sealed","Sealed"]].map(([k,label]) => (
+                <button key={k} onClick={() => setAllItemsFilter(k)} className={`ht-chip flex-shrink-0 ${allItemsFilter===k?"ht-chip-active":""}`}>{label}</button>
               ))}
+              <select value={allItemsSort} onChange={(e) => setAllItemsSort(e.target.value)} className="ht-input rounded-md px-2 py-1.5 text-xs" style={{ flex:1, minWidth:0 }}>
+                <option value="value" style={{ background:"var(--panel-2)" }}>Highest Value</option>
+                <option value="priceLow" style={{ background:"var(--panel-2)" }}>Price: Low to High</option>
+                <option value="priceHigh" style={{ background:"var(--panel-2)" }}>Price: High to Low</option>
+                <option value="pctLow" style={{ background:"var(--panel-2)" }}>% Change: Low → High</option>
+                <option value="pctHigh" style={{ background:"var(--panel-2)" }}>% Change: High → Low</option>
+                <option value="nameAZ" style={{ background:"var(--panel-2)" }}>Name: A to Z</option>
+                <option value="nameZA" style={{ background:"var(--panel-2)" }}>Name: Z to A</option>
+                <option value="dateNew" style={{ background:"var(--panel-2)" }}>Newest First</option>
+                <option value="dateOld" style={{ background:"var(--panel-2)" }}>Oldest First</option>
+              </select>
+              <button onClick={() => { setTab("tools"); setToolsView("trade"); }} className="ht-chip flex-shrink-0 flex items-center gap-1" style={{ fontSize:11 }}>
+                <ArrowLeftRight size={12} /> Trade
+              </button>
+              <button onClick={exportFullBackup} className="ht-chip flex-shrink-0 flex items-center gap-1" style={{ fontSize:11 }}>
+                <Download size={12} /> Export
+              </button>
             </div>
-            <select value={allItemsSort} onChange={(e) => setAllItemsSort(e.target.value)} className="ht-input rounded-md px-2 py-1.5 text-xs ml-auto">
-              <option value="value" style={{ background: "var(--panel-2)" }}>Sort: Highest Value</option>
-              <option value="priceLow" style={{ background: "var(--panel-2)" }}>Price: Low to High</option>
-              <option value="priceHigh" style={{ background: "var(--panel-2)" }}>Price: High to Low</option>
-              <option value="pctLow" style={{ background: "var(--panel-2)" }}>Percent Change: Low to High</option>
-              <option value="pctHigh" style={{ background: "var(--panel-2)" }}>Percent Change: High to Low</option>
-              <option value="nameAZ" style={{ background: "var(--panel-2)" }}>Name: A to Z</option>
-              <option value="nameZA" style={{ background: "var(--panel-2)" }}>Name: Z to A</option>
-              <option value="dateNew" style={{ background: "var(--panel-2)" }}>Date Added: Newest First</option>
-              <option value="dateOld" style={{ background: "var(--panel-2)" }}>Date Added: Oldest First</option>
-            </select>
           </div>
 
           <div className="px-4 flex flex-col gap-2 pb-6">
@@ -3009,7 +3012,7 @@ export default function HoloHQApp() {
             <input value={portfolioDetailSearch} onChange={(e) => setPortfolioDetailSearch(e.target.value)}
               placeholder="Search this portfolio..." className="ht-input rounded-lg px-3 py-2 text-sm w-full" />
             {/* row 2: portfolio picker · sort · trade · export · view */}
-            <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+            <div style={{ display:"flex", gap:6, alignItems:"center", width:"100%" }}>
               {/* portfolio switcher */}
               <select value={activePortfolioId || ""} onChange={e => {
                   if (e.target.value === "__all__") { setActivePortfolioId(null); setAllItemsOpen(true); }
