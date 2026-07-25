@@ -16,42 +16,55 @@ async function getToken(id, secret) {
   return data.access_token;
 }
 
+function buildQuery(name, set, condition, category) {
+  const isGraded = condition && condition.match(/^(PSA|BGS|CGC)\s*[\d.]+/);
+  const isRaw = !isGraded;
+
+  let parts = [];
+
+  // Card name — quoted for exact match
+  parts.push(`"${name}"`);
+
+  // For graded cards, the grade is the most important filter
+  if (isGraded) {
+    const gradeMatch = condition.match(/^(PSA|BGS|CGC)\s*([\d.]+|Black Label|Pristine)/i);
+    if (gradeMatch) {
+      parts.push(gradeMatch[1]); // PSA / BGS / CGC
+      parts.push(gradeMatch[2]); // 10 / 9 / etc
+    }
+  }
+
+  // Set name
+  if (set && set.length < 30) {
+    parts.push(`"${set}"`);
+  }
+
+  // Category keyword + raw/graded filter
+  if (category === "basketball" || category === "football" || category === "baseball") {
+    parts.push("card");
+    if (isRaw) parts.push("-PSA -BGS -CGC -SGC"); // exclude graded from raw searches
+  } else if (category === "onepiece") {
+    parts.push("one piece");
+    if (isRaw) parts.push("-PSA -BGS -CGC");
+  } else {
+    // Pokemon default
+    parts.push("pokemon");
+    if (isRaw) parts.push("-PSA -BGS -CGC -SGC"); // exclude graded listings
+  }
+
+  return parts.join(" ");
+}
+
 async function ebaySearch(token, q, sort) {
   const url = new URL("https://api.ebay.com/buy/browse/v1/item_summary/search");
   url.searchParams.set("q", q);
   url.searchParams.set("limit", "10");
   url.searchParams.set("sort", sort);
-  url.searchParams.set("filter", "buyingOptions:{FIXED_PRICE|AUCTION}");
   const res = await fetch(url.toString(), {
     headers: { "Authorization": `Bearer ${token}`, "X-EBAY-C-MARKETPLACE-ID": "EBAY_US" }
   });
   const text = await res.text();
   try { return JSON.parse(text); } catch { return { itemSummaries: [] }; }
-}
-
-function buildQuery(name, set, condition) {
-  // Start with card name — use quotes for exact match
-  let parts = [`"${name}"`];
-  
-  // Add grade/condition — very important for accuracy
-  if (condition && condition.match(/^(PSA|BGS|CGC)\s*\d/)) {
-    parts.push(condition); // e.g. "PSA 10"
-  } else if (condition && condition.startsWith("Raw ")) {
-    const grade = condition.replace("Raw ", "");
-    if (grade !== "NM") parts.push(grade);
-  }
-  
-  // Add set name shortened — helps narrow without being too restrictive
-  if (set && set.length < 30) {
-    // Strip common generic words that hurt search
-    const cleanSet = set.replace(/\b(set|series|collection|edition)\b/gi, "").trim();
-    if (cleanSet.length > 2) parts.push(cleanSet);
-  }
-  
-  // Always add "pokemon card" to filter out non-card results
-  parts.push("pokemon card");
-  
-  return parts.join(" ");
 }
 
 export default async function handler(req) {
@@ -70,27 +83,12 @@ export default async function handler(req) {
 
   try {
     const token = await getToken(id, secret);
-    
-    // Build category-aware query
-    let q;
-    if (category === "sports" || category === "basketball" || category === "football" || category === "baseball") {
-      q = `"${name}"`;
-      if (condition?.match(/^(PSA|BGS|CGC)\s*\d/)) q += ` ${condition}`;
-      if (set) q += ` "${set}"`;
-      q += " trading card";
-    } else if (category === "onepiece") {
-      q = `"${name}"`;
-      if (condition?.match(/^(PSA|BGS|CGC)\s*\d/)) q += ` ${condition}`;
-      if (set) q += ` ${set}`;
-      q += " one piece card";
-    } else {
-      q = buildQuery(name, set, condition);
-    }
+    const q = buildQuery(name, set, condition, category);
 
-    // Fetch recently sold and currently listed in parallel
-    const [soldData, listedData] = await Promise.all([
-      ebaySearch(token, q, "-endDate"),
-      ebaySearch(token, q, "price"),
+    // Fetch in parallel — different sorts give different results
+    const [recentData, cheapData] = await Promise.all([
+      ebaySearch(token, q, "-endDate"),  // most recently ended/sold
+      ebaySearch(token, q, "price"),      // lowest price first
     ]);
 
     const mapItem = i => ({
@@ -99,25 +97,29 @@ export default async function handler(req) {
       url: i.itemWebUrl,
     });
 
-    const sold = (soldData.itemSummaries || []).map(mapItem).filter(i => i.price > 0);
-    const listed = (listedData.itemSummaries || []).map(mapItem).filter(i => i.price > 0).sort((a,b) => a.price - b.price);
+    const recent = (recentData.itemSummaries || []).map(mapItem).filter(i => i.price > 0);
+    const cheap = (cheapData.itemSummaries || []).map(mapItem).filter(i => i.price > 0);
 
-    // Remove outliers from listed for stats
-    const prices = listed.map(i => i.price);
-    const median = prices.length ? prices[Math.floor(prices.length / 2)] : 0;
-    const filtered = median > 0 ? prices.filter(p => p >= median * 0.2 && p <= median * 5) : prices;
+    // Deduplicate listed from recent (by URL)
+    const recentUrls = new Set(recent.map(i => i.url));
+    const listed = cheap.filter(i => !recentUrls.has(i.url));
+
+    const prices = cheap.map(i => i.price);
+    const sorted = [...prices].sort((a,b) => a-b);
+    const median = sorted.length ? sorted[Math.floor(sorted.length / 2)] : 0;
+    const filtered = median > 0 ? sorted.filter(p => p >= median * 0.15 && p <= median * 5) : sorted;
     const avg = filtered.length ? filtered.reduce((s,p) => s+p, 0) / filtered.length : 0;
 
     return new Response(JSON.stringify({
       query: q,
-      sold: sold.slice(0, 6),
+      sold: recent.slice(0, 6),
       listed: listed.slice(0, 6),
       stats: {
         avg: Math.round(avg * 100) / 100,
         median: Math.round(median * 100) / 100,
-        low: Math.round((prices[0] || 0) * 100) / 100,
-        high: Math.round((prices[prices.length-1] || 0) * 100) / 100,
-        count: prices.length
+        low: Math.round((filtered[0] || 0) * 100) / 100,
+        high: Math.round((filtered[filtered.length-1] || 0) * 100) / 100,
+        count: filtered.length
       }
     }), { status: 200, headers: hdrs });
 
