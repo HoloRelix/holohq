@@ -2068,7 +2068,7 @@ export default function HoloHQApp() {
               {/* Recently sold */}
               {ebayData?.sold?.length > 0 && (
                 <div className="mb-3">
-                  <div className="text-xs font-semibold mb-1.5" style={{ color:"var(--muted)", letterSpacing:"0.05em" }}>RECENTLY SOLD</div>
+                  <div className="text-xs font-semibold mb-1.5" style={{ color:"var(--muted)", letterSpacing:"0.05em" }}>LOWEST LISTED</div>
                   {ebayData.sold.slice(0,5).map((item, i) => (
                     <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
                       style={{ textDecoration:"none", display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, padding:"6px 0", borderBottom: i < 4 ? "1px solid var(--line)" : "none" }}>
@@ -2082,7 +2082,7 @@ export default function HoloHQApp() {
               {/* Currently listed */}
               {ebayData?.listed?.length > 0 && (
                 <div>
-                  <div className="text-xs font-semibold mb-1.5" style={{ color:"var(--muted)", letterSpacing:"0.05em" }}>LISTED · LOW TO HIGH</div>
+                  <div className="text-xs font-semibold mb-1.5" style={{ color:"var(--muted)", letterSpacing:"0.05em" }}>HIGHEST LISTED</div>
                   {ebayData.listed.slice(0,5).map((item, i) => (
                     <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
                       style={{ textDecoration:"none", display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, padding:"6px 0", borderBottom: i < 4 ? "1px solid var(--line)" : "none" }}>
