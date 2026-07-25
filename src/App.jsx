@@ -1988,52 +1988,6 @@ export default function HoloHQApp() {
             )}
           </div>
 
-          {/* eBay recent sales */}
-          <div className="px-4 mb-3">
-            <div className="ht-card p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <div className="text-xs font-semibold" style={{ color:"var(--muted)", letterSpacing:"0.06em" }}>EBAY RECENT SALES</div>
-                  {ebayData?.stats && <div className="text-xs mt-0.5" style={{ color:"var(--muted)" }}>{ebayData.stats.count} sold listings</div>}
-                </div>
-                <button onClick={() => fetchEbayPrice(r.name, r.set, r.condition)}
-                  disabled={ebayLoading}
-                  className="ht-chip text-xs flex items-center gap-1.5"
-                  style={{ fontSize:11 }}>
-                  {ebayLoading ? <Loader2 size={11} style={{ animation:"spin 1s linear infinite" }} /> : <RefreshCw size={11} />}
-                  {ebayLoading ? "Loading…" : ebayData ? "Refresh" : "Fetch Sales"}
-                </button>
-              </div>
-              {ebayData?.error && (
-                <div className="text-xs py-2" style={{ color:"var(--red)" }}>Error: {ebayData.error}</div>
-              )}
-              {ebayData?.stats && (
-                <>
-                  <div className="grid grid-cols-4 gap-2 mb-3">
-                    {[["Avg", ebayData.stats.avg], ["Median", ebayData.stats.median], ["Low", ebayData.stats.low], ["High", ebayData.stats.high]].map(([label, val]) => (
-                      <div key={label} className="text-center">
-                        <div className="ht-mono text-sm font-bold" style={{ color:"var(--green)" }}>${typeof val === "number" ? val.toFixed(0) : "—"}</div>
-                        <div className="text-xs" style={{ color:"var(--muted)" }}>{label}</div>
-                      </div>
-                    ))}
-                  </div>
-                  {(ebayData.items||[]).slice(0,5).map((item, i) => (
-                    <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
-                      className="ht-card p-2 flex items-center justify-between gap-2 mb-1.5" style={{ textDecoration:"none" }}>
-                      <span className="text-xs truncate flex-1" style={{ color:"var(--text)" }}>{item.title}</span>
-                      <span className="ht-mono text-xs font-bold flex-shrink-0" style={{ color:"var(--green)" }}>${typeof item.price === "number" ? item.price.toFixed(2) : item.price}</span>
-                    </a>
-                  ))}
-                </>
-              )}
-              {!ebayData && (
-                <div className="text-xs text-center py-3" style={{ color:"var(--muted)" }}>
-                  {ebayLoading ? "Fetching recent eBay sales…" : "Tap Fetch Sales to see what this card sold for recently"}
-                </div>
-              )}
-            </div>
-          </div>
-
           {/* population — always visible, grouped by company with proportion bars */}
           {(() => {
             const COMPANY_GROUPS = [
