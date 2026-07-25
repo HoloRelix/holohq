@@ -3018,7 +3018,7 @@ export default function HoloHQApp() {
                   if (e.target.value === "__all__") { setActivePortfolioId(null); setAllItemsOpen(true); }
                   else setActivePortfolioId(e.target.value);
                 }}
-                className="ht-input rounded-lg px-2 py-1.5 text-xs flex-shrink-0" style={{ maxWidth:130 }}>
+                className="ht-input rounded-lg px-2 py-1.5 text-xs flex-shrink-0" style={{ maxWidth:180 }}>
                 <option value="__all__" style={{ background:"var(--panel-2)" }}>All Portfolios</option>
                 {portfolios.map(p => <option key={p.id} value={p.id} style={{ background:"var(--panel-2)" }}>{p.name}</option>)}
               </select>
