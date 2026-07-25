@@ -5,56 +5,58 @@ export default async function handler(req) {
   const name = searchParams.get("name") || "";
   const set = searchParams.get("set") || "";
   const condition = searchParams.get("condition") || "";
-
   const headers = { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" };
+
   if (!name) return new Response(JSON.stringify({ error: "name required" }), { status: 400, headers });
 
   const id = process.env.EBAY_CLIENT_ID;
-  const secret = process.env.EBAY_CLIENT_SECRET;
-  if (!id || !secret) return new Response(JSON.stringify({ error: "credentials not configured" }), { status: 500, headers });
+  if (!id) return new Response(JSON.stringify({ error: "credentials not configured" }), { status: 500, headers });
 
   try {
-    // Use TextEncoder based base64 for edge runtime
-    const enc = new TextEncoder();
-    const credBytes = enc.encode(`${id}:${secret}`);
-    let binary = '';
-    credBytes.forEach(b => binary += String.fromCharCode(b));
-    const encoded = btoa(binary);
-
-    const tokenRes = await fetch("https://api.ebay.com/identity/v1/oauth2/token", {
-      method: "POST",
-      headers: {
-        "Authorization": `Basic ${encoded}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: "grant_type=client_credentials&scope=https%3A%2F%2Fapi.ebay.com%2Foauth%2Fapi_scope",
-    });
-
-    const tokenText = await tokenRes.text();
-    let tokenData;
-    try { tokenData = JSON.parse(tokenText); } catch(e) { return new Response(JSON.stringify({ error: `Token parse failed: ${tokenText.slice(0,100)}` }), { status: 500, headers }); }
-    if (!tokenData.access_token) return new Response(JSON.stringify({ error: tokenData.error_description || "Token failed", raw: tokenText.slice(0,200) }), { status: 500, headers });
-
-    const token = tokenData.access_token;
-
+    // Build search query
     let q = name;
     if (condition.match(/^(PSA|BGS|CGC)\s*\d/)) q += ` ${condition}`;
     else if (condition.startsWith("Raw ")) q += ` ${condition.replace("Raw ", "")}`;
     if (set && set.length < 25) q += ` ${set}`;
 
-    const url = `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(q)}&limit=20&sort=price`;
-    const searchRes = await fetch(url, {
-      headers: { "Authorization": `Bearer ${token}`, "X-EBAY-C-MARKETPLACE-ID": "EBAY_US" }
-    });
+    // Finding API - findCompletedItems returns SOLD listings
+    // This uses the App ID directly (no OAuth needed for Finding API)
+    const findingUrl = new URL("https://svcs.ebay.com/services/search/FindingService/v1");
+    findingUrl.searchParams.set("OPERATION-NAME", "findCompletedItems");
+    findingUrl.searchParams.set("SERVICE-VERSION", "1.0.0");
+    findingUrl.searchParams.set("SECURITY-APPNAME", id);
+    findingUrl.searchParams.set("RESPONSE-DATA-FORMAT", "JSON");
+    findingUrl.searchParams.set("keywords", q);
+    findingUrl.searchParams.set("paginationInput.entriesPerPage", "20");
+    findingUrl.searchParams.set("sortOrder", "EndTimeSoonest");
+    // Filter to sold items only
+    findingUrl.searchParams.set("itemFilter(0).name", "SoldItemsOnly");
+    findingUrl.searchParams.set("itemFilter(0).value", "true");
+    // Trading cards category
+    findingUrl.searchParams.set("categoryId", "2536");
 
-    const searchText = await searchRes.text();
+    const res = await fetch(findingUrl.toString());
+    const text = await res.text();
     let data;
-    try { data = JSON.parse(searchText); } catch(e) { return new Response(JSON.stringify({ error: `Search parse failed (${searchRes.status}): ${searchText.slice(0,200)}` }), { status: 500, headers }); }
+    try { data = JSON.parse(text); } catch(e) {
+      return new Response(JSON.stringify({ error: `Parse failed: ${text.slice(0,200)}` }), { status: 500, headers });
+    }
 
-    if (data.errors) return new Response(JSON.stringify({ error: data.errors[0]?.longMessage || "Search error" }), { status: 500, headers });
+    const results = data?.findCompletedItemsResponse?.[0];
+    if (results?.ack?.[0] === "Failure") {
+      return new Response(JSON.stringify({ error: results?.errorMessage?.[0]?.error?.[0]?.message?.[0] || "eBay error" }), { status: 500, headers });
+    }
 
-    const items = (data.itemSummaries || [])
-      .map(i => ({ title: i.title, price: parseFloat(i.price?.value || 0), url: i.itemWebUrl }))
+    const soldItems = results?.searchResult?.[0]?.item || [];
+
+    const items = soldItems
+      .filter(i => i.sellingStatus?.[0]?.sellingState?.[0] === "EndedWithSales")
+      .map(i => ({
+        title: i.title?.[0],
+        price: parseFloat(i.sellingStatus?.[0]?.currentPrice?.[0]?.["__value__"] || 0),
+        url: i.viewItemURL?.[0],
+        endDate: i.listingInfo?.[0]?.endTime?.[0],
+      }))
       .filter(i => i.price > 0)
       .sort((a, b) => a.price - b.price);
 
@@ -64,8 +66,16 @@ export default async function handler(req) {
     const avg = prices.length ? prices.reduce((s, p) => s + p, 0) / prices.length : 0;
 
     return new Response(JSON.stringify({
-      query: q, total: data.total || 0, items: filtered.slice(0, 6),
-      stats: { avg: Math.round(avg * 100) / 100, median: Math.round(median * 100) / 100, low: Math.round((prices[0]||0) * 100) / 100, high: Math.round((prices[prices.length-1]||0) * 100) / 100, count: prices.length }
+      query: q,
+      total: parseInt(results?.paginationOutput?.[0]?.totalEntries?.[0] || 0),
+      items: filtered.slice(0, 6),
+      stats: {
+        avg: Math.round(avg * 100) / 100,
+        median: Math.round(median * 100) / 100,
+        low: Math.round((prices[0] || 0) * 100) / 100,
+        high: Math.round((prices[prices.length - 1] || 0) * 100) / 100,
+        count: prices.length
+      }
     }), { status: 200, headers });
 
   } catch (err) {
