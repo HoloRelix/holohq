@@ -46,10 +46,15 @@ export default async function handler(req) {
     const queries = [];
     
     if (gradeMatch) {
+      // Map shorthand grades to full search terms
+      const gradeCompany = gradeMatch[1]; // PSA, BGS, CGC
+      let gradeLabel = gradeMatch[2]; // 10, 9, BL, Pristine, etc
+      if (gradeLabel === 'BL') gradeLabel = 'Black Label';
+      const gradeStr = `${gradeCompany} ${gradeLabel}`;
       // Graded: try with set first, then without
-      queries.push(`${name} ${gradeMatch[1]} ${gradeMatch[2]} ${set} pokemon`);
-      queries.push(`${name} ${gradeMatch[1]} ${gradeMatch[2]} pokemon`);
-      queries.push(`${name} ${gradeMatch[1]} ${gradeMatch[2]}`);
+      queries.push(`${name} "${gradeStr}" ${set} pokemon`);
+      queries.push(`${name} "${gradeStr}" pokemon`);
+      queries.push(`${name} "${gradeStr}"`);
     } else {
       // Raw: exclude graded
       queries.push(`${name} ${set} pokemon -PSA -BGS -CGC -SGC`);
