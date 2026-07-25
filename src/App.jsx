@@ -1957,15 +1957,15 @@ export default function HoloHQApp() {
           <div className="px-4 mt-3 flex items-center gap-2">
             {showRawScale && (
               <div className="flex rounded-full p-0.5 flex-shrink-0" style={{ background: "var(--panel-2)" }}>
-                <button onClick={() => { setGradeMode("raw"); if (!activeCondition.startsWith("Raw ")) setChartCondition("Raw NM"); }} className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                <button onClick={() => { setGradeMode("raw"); const nc = "Raw NM"; if (!activeCondition.startsWith("Raw ")) { setChartCondition(nc); setEbayData(null); setTimeout(() => fetchEbayPrice(r.name, r.set, nc, r.category), 100); } }} className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
                   style={{ background: gradeMode === "raw" ? "var(--purple)" : "transparent", color: gradeMode === "raw" ? "#fff" : "var(--muted)" }}>Raw</button>
-                <button onClick={() => { setGradeMode("graded"); if (activeCondition.startsWith("Raw ")) setChartCondition("PSA 10"); }} className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                <button onClick={() => { setGradeMode("graded"); const nc = "PSA 10"; if (activeCondition.startsWith("Raw ")) { setChartCondition(nc); setEbayData(null); setTimeout(() => fetchEbayPrice(r.name, r.set, nc, r.category), 100); } }} className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
                   style={{ background: gradeMode === "graded" ? "var(--purple)" : "transparent", color: gradeMode === "graded" ? "#fff" : "var(--muted)" }}>Graded</button>
               </div>
             )}
             <div className="flex gap-1.5 overflow-x-auto ht-scroll flex-1">
               {(showRawScale && gradeMode === "raw" ? RAW_CONDITIONS : GRADED_CONDITIONS).map(c => (
-                <button key={c.key} onClick={() => setChartCondition(c.key)} className={`ht-chip flex-shrink-0 ${activeCondition === c.key ? "ht-chip-active" : ""}`} style={{ padding: "3px 10px", fontSize: 11 }}>{c.label}</button>
+                <button key={c.key} onClick={() => { setChartCondition(c.key); setEbayData(null); setTimeout(() => fetchEbayPrice(r.name, r.set, c.key, r.category), 100); }} className={`ht-chip flex-shrink-0 ${activeCondition === c.key ? "ht-chip-active" : ""}`} style={{ padding: "3px 10px", fontSize: 11 }}>{c.label}</button>
               ))}
             </div>
           </div>
@@ -2017,7 +2017,7 @@ export default function HoloHQApp() {
                             const pop = getGradePopulation(r.name, r.set || "", g);
                             const isActive = activeCondition === g;
                             return (
-                              <div key={g} onClick={() => { setChartCondition(g); setGradeMode("graded"); }} style={{ cursor: "pointer" }}>
+                              <div key={g} onClick={() => { setChartCondition(g); setGradeMode("graded"); setEbayData(null); setTimeout(() => fetchEbayPrice(r.name, r.set, g, r.category), 100); }} style={{ cursor: "pointer" }}>
                                 <div className="flex items-center justify-between mb-0.5">
                                   <span className="text-xs" style={{ color: isActive ? color : "var(--muted)", fontWeight: isActive ? 700 : 400 }}>{g.replace(`${company} `, "").replace("Black Label", "BL")}</span>
                                   <span className="ht-mono text-xs font-semibold" style={{ color: isActive ? color : "var(--text)" }}>{pop.toLocaleString()}</span>

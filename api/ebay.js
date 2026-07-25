@@ -3,8 +3,7 @@ export const config = { runtime: "edge" };
 async function getToken(id, secret) {
   const enc = new TextEncoder();
   const bytes = enc.encode(`${id}:${secret}`);
-  let bin = '';
-  bytes.forEach(b => bin += String.fromCharCode(b));
+  let bin = ''; bytes.forEach(b => bin += String.fromCharCode(b));
   const encoded = btoa(bin);
   const res = await fetch("https://api.ebay.com/identity/v1/oauth2/token", {
     method: "POST",
@@ -17,39 +16,25 @@ async function getToken(id, secret) {
 }
 
 function buildQuery(name, set, condition, category) {
-  const isGraded = condition && condition.match(/^(PSA|BGS|CGC)\s*[\d.]+/);
-  const isRaw = !isGraded;
+  const isGraded = condition && condition.match(/^(PSA|BGS|CGC)\s*[\d.]+/i);
+  let parts = [`"${name}"`];
 
-  let parts = [];
-
-  // Card name — quoted for exact match
-  parts.push(`"${name}"`);
-
-  // For graded cards, the grade is the most important filter
   if (isGraded) {
-    const gradeMatch = condition.match(/^(PSA|BGS|CGC)\s*([\d.]+|Black Label|Pristine)/i);
-    if (gradeMatch) {
-      parts.push(gradeMatch[1]); // PSA / BGS / CGC
-      parts.push(gradeMatch[2]); // 10 / 9 / etc
-    }
+    const m = condition.match(/^(PSA|BGS|CGC)\s*([\d.]+|Black Label|Pristine)/i);
+    if (m) { parts.push(m[1]); parts.push(m[2]); }
+  } else {
+    // Raw — exclude graded slabs
+    parts.push("-PSA -BGS -CGC -SGC");
   }
 
-  // Set name
-  if (set && set.length < 30) {
-    parts.push(`"${set}"`);
-  }
+  if (set && set.length < 30) parts.push(`"${set}"`);
 
-  // Category keyword + raw/graded filter
   if (category === "basketball" || category === "football" || category === "baseball") {
     parts.push("card");
-    if (isRaw) parts.push("-PSA -BGS -CGC -SGC"); // exclude graded from raw searches
   } else if (category === "onepiece") {
     parts.push("one piece");
-    if (isRaw) parts.push("-PSA -BGS -CGC");
   } else {
-    // Pokemon default
     parts.push("pokemon");
-    if (isRaw) parts.push("-PSA -BGS -CGC -SGC"); // exclude graded listings
   }
 
   return parts.join(" ");
@@ -58,7 +43,7 @@ function buildQuery(name, set, condition, category) {
 async function ebaySearch(token, q, sort) {
   const url = new URL("https://api.ebay.com/buy/browse/v1/item_summary/search");
   url.searchParams.set("q", q);
-  url.searchParams.set("limit", "10");
+  url.searchParams.set("limit", "8");
   url.searchParams.set("sort", sort);
   const res = await fetch(url.toString(), {
     headers: { "Authorization": `Bearer ${token}`, "X-EBAY-C-MARKETPLACE-ID": "EBAY_US" }
@@ -85,10 +70,9 @@ export default async function handler(req) {
     const token = await getToken(id, secret);
     const q = buildQuery(name, set, condition, category);
 
-    // Fetch in parallel — different sorts give different results
     const [recentData, cheapData] = await Promise.all([
-      ebaySearch(token, q, "-endDate"),  // most recently ended/sold
-      ebaySearch(token, q, "price"),      // lowest price first
+      ebaySearch(token, q, "-endDate"),
+      ebaySearch(token, q, "price"),
     ]);
 
     const mapItem = i => ({
@@ -98,13 +82,10 @@ export default async function handler(req) {
     });
 
     const recent = (recentData.itemSummaries || []).map(mapItem).filter(i => i.price > 0);
-    const cheap = (cheapData.itemSummaries || []).map(mapItem).filter(i => i.price > 0);
+    // For listed, keep all results sorted by price — don't deduplicate
+    const listed = (cheapData.itemSummaries || []).map(mapItem).filter(i => i.price > 0).sort((a,b) => a.price - b.price);
 
-    // Deduplicate listed from recent (by URL)
-    const recentUrls = new Set(recent.map(i => i.url));
-    const listed = cheap.filter(i => !recentUrls.has(i.url));
-
-    const prices = cheap.map(i => i.price);
+    const prices = listed.map(i => i.price);
     const sorted = [...prices].sort((a,b) => a-b);
     const median = sorted.length ? sorted[Math.floor(sorted.length / 2)] : 0;
     const filtered = median > 0 ? sorted.filter(p => p >= median * 0.15 && p <= median * 5) : sorted;
