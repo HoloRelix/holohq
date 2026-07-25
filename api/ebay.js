@@ -46,38 +46,67 @@ export default async function handler(req) {
     const token = await getToken(id, secret);
     const q = buildQuery(name, set, condition, category);
 
-    // Use Browse API with two different offset pages to get variety
-    const [page1, page2] = await Promise.all([
+    // Try 130point for sold data (free, no key needed)
+    const soldSearch = encodeURIComponent(q.replace(/"/g, ''));
+    const [soldRes, activeRes] = await Promise.all([
+      fetch(`https://www.130point.com/sales/?query=${soldSearch}`, {
+        headers: { 
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          "Accept": "text/html,application/xhtml+xml",
+        }
+      }),
       fetch(`https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(q)}&limit=8&sort=price`, {
         headers: { "Authorization": `Bearer ${token}`, "X-EBAY-C-MARKETPLACE-ID": "EBAY_US" }
-      }).then(r => r.json()),
-      fetch(`https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(q)}&limit=8&sort=-price`, {
-        headers: { "Authorization": `Bearer ${token}`, "X-EBAY-C-MARKETPLACE-ID": "EBAY_US" }
-      }).then(r => r.json()),
+      })
     ]);
 
-    const mapItem = i => ({ title: i.title, price: parseFloat(i.price?.value || 0), url: i.itemWebUrl });
-    const cheap = (page1.itemSummaries || []).map(mapItem).filter(i => i.price > 0);
-    const expensive = (page2.itemSummaries || []).map(mapItem).filter(i => i.price > 0);
+    // Parse 130point HTML for sold listings
+    const soldHtml = await soldRes.text();
+    const sold = [];
+    
+    // Extract sold items from 130point HTML
+    const rowRegex = /<tr[^>]*>[\s\S]*?<\/tr>/gi;
+    const rows = soldHtml.match(rowRegex) || [];
+    for (const row of rows.slice(1, 10)) {
+      const priceMatch = row.match(/\$([0-9,.]+)/);
+      const titleMatch = row.match(/<td[^>]*>([^<]{10,80})<\/td>/);
+      const linkMatch = row.match(/href="([^"]*ebay[^"]*)"/);
+      if (priceMatch && titleMatch) {
+        const price = parseFloat(priceMatch[1].replace(',', ''));
+        if (price > 0) {
+          sold.push({
+            title: titleMatch[1].trim(),
+            price,
+            url: linkMatch?.[1] || `https://www.ebay.com/sch/i.html?_nkw=${soldSearch}&LH_Complete=1&LH_Sold=1`
+          });
+        }
+      }
+    }
 
-    const cheapUrls = new Set(cheap.map(i => i.url));
-    const uniqueExpensive = expensive.filter(i => !cheapUrls.has(i.url));
+    // Active listings from eBay Browse API
+    const activeData = await activeRes.json();
+    const listed = (activeData.itemSummaries || [])
+      .map(i => ({ title: i.title, price: parseFloat(i.price?.value || 0), url: i.itemWebUrl }))
+      .filter(i => i.price > 0)
+      .sort((a, b) => a.price - b.price);
 
-    const prices = cheap.map(i => i.price);
-    const sorted = [...prices].sort((a,b) => a-b);
-    const median = sorted.length ? sorted[Math.floor(sorted.length / 2)] : 0;
-    const avg = sorted.length ? sorted.reduce((s,p) => s+p, 0) / sorted.length : 0;
+    // Stats from sold if available, else active
+    const priceSrc = sold.length > 0 ? sold : listed;
+    const prices = priceSrc.map(i => i.price).sort((a,b) => a-b);
+    const median = prices.length ? prices[Math.floor(prices.length / 2)] : 0;
+    const avg = prices.length ? prices.reduce((s,p) => s+p, 0) / prices.length : 0;
 
     return new Response(JSON.stringify({
       query: q,
-      sold: cheap.slice(0, 6),
-      listed: uniqueExpensive.length > 0 ? uniqueExpensive.slice(0, 6) : cheap.slice(0, 6),
-      stats: sorted.length ? {
+      sold: sold.length > 0 ? sold.slice(0, 6) : [],
+      listed: listed.slice(0, 6),
+      soldSource: sold.length > 0 ? '130point' : 'none',
+      stats: prices.length ? {
         avg: Math.round(avg * 100) / 100,
         median: Math.round(median * 100) / 100,
-        low: Math.round(sorted[0] * 100) / 100,
-        high: Math.round(sorted[sorted.length-1] * 100) / 100,
-        count: sorted.length
+        low: Math.round(prices[0] * 100) / 100,
+        high: Math.round(prices[prices.length-1] * 100) / 100,
+        count: prices.length
       } : null
     }), { status: 200, headers: hdrs });
 
