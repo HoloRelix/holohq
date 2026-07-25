@@ -14,21 +14,6 @@ async function getToken(id, secret) {
   return data.access_token;
 }
 
-function buildQuery(name, set, condition, category) {
-  const isGraded = condition && condition.match(/^(PSA|BGS|CGC)\s*[\d.]+/i);
-  let parts = [`"${name}"`];
-  if (isGraded) {
-    const m = condition.match(/^(PSA|BGS|CGC)\s*([\d.]+|Black Label|Pristine)/i);
-    if (m) { parts.push(m[1]); parts.push(m[2]); }
-  } else {
-    parts.push('-PSA -BGS -CGC -SGC');
-  }
-  if (set && set.length < 30) parts.push(`"${set}"`);
-  parts.push(category === 'onepiece' ? 'one piece' :
-    (category === 'basketball' || category === 'football' || category === 'baseball') ? 'card' : 'pokemon');
-  return parts.join(' ');
-}
-
 export default async function handler(req) {
   const { searchParams } = new URL(req.url);
   const name = searchParams.get("name") || "";
@@ -44,64 +29,42 @@ export default async function handler(req) {
 
   try {
     const token = await getToken(id, secret);
-    const q = buildQuery(name, set, condition, category);
-    const qClean = q.replace(/"/g, '').replace(/-\w+/g, '').trim();
+    const isGraded = condition.match(/^(PSA|BGS|CGC)\s*[\d.]+/i);
 
-    // Scrape eBay completed/sold listings page
-    const ebayCompletedUrl = `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(qClean)}&LH_Complete=1&LH_Sold=1&_sop=13&rt=nc`;
-    
-    const [soldRes, activeRes] = await Promise.all([
-      fetch(ebayCompletedUrl, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
-          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-          "Accept-Language": "en-US,en;q=0.9",
-          "Accept-Encoding": "gzip, deflate, br",
-        }
-      }),
-      fetch(`https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(q)}&limit=8&sort=price`, {
-        headers: { "Authorization": `Bearer ${token}`, "X-EBAY-C-MARKETPLACE-ID": "EBAY_US" }
-      })
-    ]);
-
-    // Parse eBay sold listings HTML
-    const soldHtml = await soldRes.text();
-    const sold = [];
-
-    // eBay uses s-item class for each listing
-    const itemRegex = /s-item__title[^>]*>([^<]+)<[\s\S]*?s-item__price[^>]*>[\s\S]*?\$([0-9,]+\.?\d*)/g;
-    let match;
-    while ((match = itemRegex.exec(soldHtml)) !== null && sold.length < 8) {
-      const title = match[1].replace('New listing', '').trim();
-      const price = parseFloat(match[2].replace(',', ''));
-      if (price > 0 && title.length > 5 && !title.includes('Shop on eBay')) {
-        sold.push({ title, price, url: ebayCompletedUrl });
-      }
+    // Build query — don't quote the name, it's too strict
+    let q = name;
+    if (isGraded) {
+      const m = condition.match(/^(PSA|BGS|CGC)\s*([\d.]+|Black Label|Pristine)/i);
+      if (m) q += ` ${m[1]} ${m[2]}`;
+    } else {
+      q += ' -PSA -BGS -CGC -SGC';
     }
+    // Don't quote set — too restrictive
+    if (set && set.length < 25) q += ` ${set}`;
+    if (category === 'onepiece') q += ' one piece';
+    else if (category === 'basketball' || category === 'football' || category === 'baseball') q += ' card';
+    else q += ' pokemon';
 
-    // Extract individual item URLs
-    const urlRegex = /href="(https:\/\/www\.ebay\.com\/itm\/[^"?]+)/g;
-    const urls = [];
-    let urlMatch;
-    while ((urlMatch = urlRegex.exec(soldHtml)) !== null) urls.push(urlMatch[1]);
-    sold.forEach((item, i) => { if (urls[i]) item.url = urls[i]; });
+    const url = `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(q)}&limit=10&sort=price`;
+    const res = await fetch(url, {
+      headers: { "Authorization": `Bearer ${token}`, "X-EBAY-C-MARKETPLACE-ID": "EBAY_US" }
+    });
+    const data = await res.json();
 
-    // Active listings
-    const activeData = await activeRes.json();
-    const listed = (activeData.itemSummaries || [])
+    const items = (data.itemSummaries || [])
       .map(i => ({ title: i.title, price: parseFloat(i.price?.value || 0), url: i.itemWebUrl }))
       .filter(i => i.price > 0)
       .sort((a, b) => a.price - b.price);
 
-    const priceSrc = sold.length > 0 ? sold : listed;
-    const prices = priceSrc.map(i => i.price).sort((a,b) => a-b);
+    const prices = items.map(i => i.price);
     const median = prices.length ? prices[Math.floor(prices.length / 2)] : 0;
     const avg = prices.length ? prices.reduce((s,p) => s+p, 0) / prices.length : 0;
 
     return new Response(JSON.stringify({
       query: q,
-      sold: sold.slice(0, 6),
-      listed: listed.slice(0, 6),
+      sold: [],
+      listed: items.slice(0, 8),
+      total: data.total || 0,
       stats: prices.length ? {
         avg: Math.round(avg * 100) / 100,
         median: Math.round(median * 100) / 100,
