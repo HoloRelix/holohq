@@ -713,6 +713,20 @@ export default function HoloHQApp() {
   const [chartCondition, setChartCondition] = useState("Raw NM");
   const [gradeMode, setGradeMode] = useState("raw");
   const [chartOpen, setChartOpen] = useState(true);
+  const [ebayData, setEbayData] = useState(null);
+  const [ebayLoading, setEbayLoading] = useState(false);
+
+  const fetchEbayPrice = async (name, set, condition) => {
+    setEbayLoading(true); setEbayData(null);
+    try {
+      const q = encodeURIComponent(`${name} ${set || ""} pokemon card`.trim());
+      const cond = encodeURIComponent(condition || "");
+      const res = await fetch(`/api/ebay?q=${q}&condition=${cond}&limit=10`);
+      const data = await res.json();
+      if (!data.error) setEbayData(data);
+    } catch(e) {}
+    setEbayLoading(false);
+  };
   const [cardAddPickerOpen, setCardAddPickerOpen] = useState(false);
   const [sealedAddPickerOpen, setSealedAddPickerOpen] = useState(false);
   const [detailAddConfirm, setDetailAddConfirm] = useState("");
