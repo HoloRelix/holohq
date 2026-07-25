@@ -45,14 +45,18 @@ export default async function handler(req) {
   try {
     const token = await getToken(id, secret);
     const q = buildQuery(name, set, condition, category);
+    const qClean = q.replace(/"/g, '').replace(/-\w+/g, '').trim();
 
-    // Try 130point for sold data (free, no key needed)
-    const soldSearch = encodeURIComponent(q.replace(/"/g, ''));
+    // Scrape eBay completed/sold listings page
+    const ebayCompletedUrl = `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(qClean)}&LH_Complete=1&LH_Sold=1&_sop=13&rt=nc`;
+    
     const [soldRes, activeRes] = await Promise.all([
-      fetch(`https://www.130point.com/sales/?query=${soldSearch}`, {
-        headers: { 
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-          "Accept": "text/html,application/xhtml+xml",
+      fetch(ebayCompletedUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.9",
+          "Accept-Encoding": "gzip, deflate, br",
         }
       }),
       fetch(`https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(q)}&limit=8&sort=price`, {
@@ -60,37 +64,35 @@ export default async function handler(req) {
       })
     ]);
 
-    // Parse 130point HTML for sold listings
+    // Parse eBay sold listings HTML
     const soldHtml = await soldRes.text();
     const sold = [];
-    
-    // Extract sold items from 130point HTML
-    const rowRegex = /<tr[^>]*>[\s\S]*?<\/tr>/gi;
-    const rows = soldHtml.match(rowRegex) || [];
-    for (const row of rows.slice(1, 10)) {
-      const priceMatch = row.match(/\$([0-9,.]+)/);
-      const titleMatch = row.match(/<td[^>]*>([^<]{10,80})<\/td>/);
-      const linkMatch = row.match(/href="([^"]*ebay[^"]*)"/);
-      if (priceMatch && titleMatch) {
-        const price = parseFloat(priceMatch[1].replace(',', ''));
-        if (price > 0) {
-          sold.push({
-            title: titleMatch[1].trim(),
-            price,
-            url: linkMatch?.[1] || `https://www.ebay.com/sch/i.html?_nkw=${soldSearch}&LH_Complete=1&LH_Sold=1`
-          });
-        }
+
+    // eBay uses s-item class for each listing
+    const itemRegex = /s-item__title[^>]*>([^<]+)<[\s\S]*?s-item__price[^>]*>[\s\S]*?\$([0-9,]+\.?\d*)/g;
+    let match;
+    while ((match = itemRegex.exec(soldHtml)) !== null && sold.length < 8) {
+      const title = match[1].replace('New listing', '').trim();
+      const price = parseFloat(match[2].replace(',', ''));
+      if (price > 0 && title.length > 5 && !title.includes('Shop on eBay')) {
+        sold.push({ title, price, url: ebayCompletedUrl });
       }
     }
 
-    // Active listings from eBay Browse API
+    // Extract individual item URLs
+    const urlRegex = /href="(https:\/\/www\.ebay\.com\/itm\/[^"?]+)/g;
+    const urls = [];
+    let urlMatch;
+    while ((urlMatch = urlRegex.exec(soldHtml)) !== null) urls.push(urlMatch[1]);
+    sold.forEach((item, i) => { if (urls[i]) item.url = urls[i]; });
+
+    // Active listings
     const activeData = await activeRes.json();
     const listed = (activeData.itemSummaries || [])
       .map(i => ({ title: i.title, price: parseFloat(i.price?.value || 0), url: i.itemWebUrl }))
       .filter(i => i.price > 0)
       .sort((a, b) => a.price - b.price);
 
-    // Stats from sold if available, else active
     const priceSrc = sold.length > 0 ? sold : listed;
     const prices = priceSrc.map(i => i.price).sort((a,b) => a-b);
     const median = prices.length ? prices[Math.floor(prices.length / 2)] : 0;
@@ -98,9 +100,8 @@ export default async function handler(req) {
 
     return new Response(JSON.stringify({
       query: q,
-      sold: sold.length > 0 ? sold.slice(0, 6) : [],
+      sold: sold.slice(0, 6),
       listed: listed.slice(0, 6),
-      soldSource: sold.length > 0 ? '130point' : 'none',
       stats: prices.length ? {
         avg: Math.round(avg * 100) / 100,
         median: Math.round(median * 100) / 100,
