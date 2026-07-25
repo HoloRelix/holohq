@@ -2068,26 +2068,29 @@ export default function HoloHQApp() {
               {/* Recently sold */}
               {ebayData?.sold?.length > 0 && (
                 <div className="mb-3">
-                  <div className="text-xs font-semibold mb-1.5" style={{ color:"var(--muted)", letterSpacing:"0.05em" }}>LOWEST LISTED</div>
-                  {ebayData.sold.slice(0,5).map((item, i) => (
+                  <div className="text-xs font-semibold mb-1.5" style={{ color:"var(--muted)", letterSpacing:"0.05em" }}>RECENTLY SOLD</div>
+                  {ebayData.sold.slice(0,6).map((item, i, arr) => (
                     <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
-                      style={{ textDecoration:"none", display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, padding:"6px 0", borderBottom: i < 4 ? "1px solid var(--line)" : "none" }}>
+                      style={{ textDecoration:"none", display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, padding:"6px 0", borderBottom: i < arr.length-1 ? "1px solid var(--line)" : "none" }}>
                       <span style={{ fontSize:11, color:"var(--text)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", flex:1 }}>{item.title}</span>
-                      <span className="ht-mono" style={{ fontSize:12, fontWeight:700, color:"var(--green)", flexShrink:0 }}>${item.price.toFixed(0)}</span>
+                      <span className="ht-mono" style={{ fontSize:12, fontWeight:700, color:"var(--green)", flexShrink:0 }}>${item.price.toFixed(2)}</span>
                     </a>
                   ))}
                 </div>
               )}
+              {ebayData?.sold?.length === 0 && !ebayLoading && (
+                <div className="text-xs py-1 mb-3" style={{ color:"var(--muted)" }}>No recent sold listings found</div>
+              )}
 
-              {/* Currently listed */}
+              {/* Active listings */}
               {ebayData?.listed?.length > 0 && (
                 <div>
-                  <div className="text-xs font-semibold mb-1.5" style={{ color:"var(--muted)", letterSpacing:"0.05em" }}>HIGHEST LISTED</div>
-                  {ebayData.listed.slice(0,5).map((item, i) => (
+                  <div className="text-xs font-semibold mb-1.5" style={{ color:"var(--muted)", letterSpacing:"0.05em" }}>ACTIVE LISTINGS · LOW TO HIGH</div>
+                  {ebayData.listed.slice(0,6).map((item, i, arr) => (
                     <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
-                      style={{ textDecoration:"none", display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, padding:"6px 0", borderBottom: i < 4 ? "1px solid var(--line)" : "none" }}>
+                      style={{ textDecoration:"none", display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, padding:"6px 0", borderBottom: i < arr.length-1 ? "1px solid var(--line)" : "none" }}>
                       <span style={{ fontSize:11, color:"var(--muted)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", flex:1 }}>{item.title}</span>
-                      <span className="ht-mono" style={{ fontSize:12, fontWeight:600, color:"var(--text)", flexShrink:0 }}>${item.price.toFixed(0)}</span>
+                      <span className="ht-mono" style={{ fontSize:12, fontWeight:600, color:"var(--text)", flexShrink:0 }}>${item.price.toFixed(2)}</span>
                     </a>
                   ))}
                 </div>
