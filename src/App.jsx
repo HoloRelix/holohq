@@ -5139,16 +5139,16 @@ export default function HoloHQApp() {
             {editingProfile ? (
               <div className="flex gap-2">
                 <button onClick={() => { setEditingProfile(false); }} className="ht-chip flex-1 text-center text-xs">Cancel</button>
-                <button onClick={async () => {
+                <button onClick={() => {
                   const newName = editName.trim() || profileName;
                   const newUsername = editUsername.trim() || profileUsername;
                   setProfileName(newName);
                   setProfileUsername(newUsername);
                   setEditingProfile(false);
                   haptic(40);
-                  // Immediately save to Supabase and window.storage
+                  // Fire and forget — debounce will pick it up
                   if (sbUser) {
-                    await sbSave(sbUser.id, { portfolios, sealedPortfolios, watchlist, salesLog, userTier, profileName: newName, profileUsername: newUsername, profileAvatar });
+                    sbSave(sbUser.id, { portfolios, sealedPortfolios, watchlist, salesLog, userTier, profileName: newName, profileUsername: newUsername, profileAvatar }).catch(() => {});
                   }
                 }} className="ht-btn-primary rounded-lg py-2 text-xs font-semibold flex-1 text-center">Save Changes</button>
               </div>
@@ -5169,10 +5169,9 @@ export default function HoloHQApp() {
                   <span className="text-sm font-semibold">Signed in</span>
                 </div>
                 <div className="text-xs mb-3" style={{ color:"var(--muted)" }}>{sbUser?.email}</div>
-                <button onClick={async () => {
-                  try { await supabase?.auth.signOut(); } catch(e) {}
+                <button onClick={() => {
                   setSbUser(null);
-                  setAuthOpen(false);
+                  supabase?.auth.signOut().catch(() => {});
                 }} className="ht-chip w-full text-center text-xs flex items-center justify-center gap-1.5" style={{ color:"var(--red)", borderColor:"var(--red)" }}>
                   Sign Out of HoloHQ
                 </button>
