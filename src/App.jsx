@@ -1659,10 +1659,26 @@ export default function HoloHQApp() {
 
   // ---- Supabase auth listener ----
   useEffect(() => {
-    // Check existing session on mount
-    supabase?.auth.getSession().then(({ data: { session } }) => {
+    // Check existing session on mount AND load cloud data
+    supabase?.auth.getSession().then(async ({ data: { session } }) => {
       const user = session?.user ?? null;
-      if (user) setSbUser(user);
+      if (user) {
+        setSbUser(user);
+        const cloud = await sbLoad(user.id);
+        if (cloud) {
+          try {
+            const d = typeof cloud === "string" ? JSON.parse(cloud) : cloud;
+            if (d.portfolios?.length) setPortfolios(d.portfolios);
+            if (d.sealedPortfolios?.length) setSealedPortfolios(d.sealedPortfolios);
+            if (d.watchlist?.length) setWatchlist(d.watchlist);
+            if (d.salesLog?.length) setSalesLog(d.salesLog);
+            if (d.userTier) setUserTier(d.userTier);
+            if (d.profileName) setProfileName(d.profileName);
+            if (d.profileUsername) setProfileUsername(d.profileUsername);
+            if (d.profileAvatar) setProfileAvatar(d.profileAvatar);
+          } catch(e) {}
+        }
+      }
     });
     const unsub = sbOnAuthChange(async (_event, session) => {
       const user = session?.user ?? null;
