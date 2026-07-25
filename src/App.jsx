@@ -1961,15 +1961,15 @@ export default function HoloHQApp() {
           <div className="px-4 mt-3 flex items-center gap-2">
             {showRawScale && (
               <div className="flex rounded-full p-0.5 flex-shrink-0" style={{ background: "var(--panel-2)" }}>
-                <button onClick={() => { setGradeMode("raw"); const nc = "Raw NM"; setChartCondition(nc); setEbayData(null); setTimeout(() => fetchEbayPrice(r.name, r.set, nc, r.category), 100); }} className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                <button onClick={() => { setGradeMode("raw"); const nc = "Raw NM"; setChartCondition(nc); setEbayData(null); fetchEbayPrice(r.name, r.set, nc, r.category); }} className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
                   style={{ background: gradeMode === "raw" ? "var(--purple)" : "transparent", color: gradeMode === "raw" ? "#fff" : "var(--muted)" }}>Raw</button>
-                <button onClick={() => { setGradeMode("graded"); const nc = "PSA 10"; setChartCondition(nc); setEbayData(null); setTimeout(() => fetchEbayPrice(r.name, r.set, nc, r.category), 100); }} className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                <button onClick={() => { setGradeMode("graded"); const nc = "PSA 10"; setChartCondition(nc); setEbayData(null); fetchEbayPrice(r.name, r.set, nc, r.category); }} className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
                   style={{ background: gradeMode === "graded" ? "var(--purple)" : "transparent", color: gradeMode === "graded" ? "#fff" : "var(--muted)" }}>Graded</button>
               </div>
             )}
             <div className="flex gap-1.5 overflow-x-auto ht-scroll flex-1">
               {(showRawScale && gradeMode === "raw" ? RAW_CONDITIONS : GRADED_CONDITIONS).map(c => (
-                <button key={c.key} onClick={() => { setChartCondition(c.key); setEbayData(null); setTimeout(() => fetchEbayPrice(r.name, r.set, c.key, r.category), 100); }} className={`ht-chip flex-shrink-0 ${activeCondition === c.key ? "ht-chip-active" : ""}`} style={{ padding: "3px 10px", fontSize: 11 }}>{c.label}</button>
+                <button key={c.key} onClick={() => { setChartCondition(c.key); setEbayData(null); fetchEbayPrice(r.name, r.set, c.key, r.category); }} className={`ht-chip flex-shrink-0 ${activeCondition === c.key ? "ht-chip-active" : ""}`} style={{ padding: "3px 10px", fontSize: 11 }}>{c.label}</button>
               ))}
             </div>
           </div>
@@ -2021,7 +2021,7 @@ export default function HoloHQApp() {
                             const pop = getGradePopulation(r.name, r.set || "", g);
                             const isActive = activeCondition === g;
                             return (
-                              <div key={g} onClick={() => { setChartCondition(g); setGradeMode("graded"); setEbayData(null); setTimeout(() => fetchEbayPrice(r.name, r.set, g, r.category), 100); }} style={{ cursor: "pointer" }}>
+                              <div key={g} onClick={() => { setChartCondition(g); setGradeMode("graded"); setEbayData(null); fetchEbayPrice(r.name, r.set, g, r.category); }} style={{ cursor: "pointer" }}>
                                 <div className="flex items-center justify-between mb-0.5">
                                   <span className="text-xs" style={{ color: isActive ? color : "var(--muted)", fontWeight: isActive ? 700 : 400 }}>{g.replace(`${company} `, "").replace("Black Label", "BL")}</span>
                                   <span className="ht-mono text-xs font-semibold" style={{ color: isActive ? color : "var(--text)" }}>{pop.toLocaleString()}</span>
@@ -2085,7 +2085,11 @@ export default function HoloHQApp() {
               {ebayData?.sold?.length === 0 && !ebayLoading && (
                 <div className="mb-3">
                   <div className="text-xs font-semibold mb-1.5" style={{ color:"var(--muted)", letterSpacing:"0.05em" }}>RECENTLY SOLD</div>
-                  <a href={`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(((r.name||"")+" "+(r.set||"")+" "+(activeCondition?.startsWith("Raw")?activeCondition.replace("Raw ",""):activeCondition||"")+" pokemon").trim())}&LH_Complete=1&LH_Sold=1&_sop=13`}
+                  <a href={(() => {
+                    const cond = activeCondition?.startsWith("Raw") ? activeCondition.replace("Raw ","") : (activeCondition||"");
+                    const q = `${r.name} ${r.set||""} ${cond} pokemon`.trim();
+                    return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(q)}&LH_Complete=1&LH_Sold=1&LH_TitleDesc=0&_sop=13`;
+                  })()}
                     target="_blank" rel="noopener noreferrer"
                     className="ht-card p-2.5 flex items-center justify-between gap-2" style={{ textDecoration:"none" }}>
                     <span style={{ fontSize:11, color:"var(--muted)" }}>View sold listings on eBay</span>
