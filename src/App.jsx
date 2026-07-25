@@ -5170,9 +5170,9 @@ export default function HoloHQApp() {
                 </div>
                 <div className="text-xs mb-3" style={{ color:"var(--muted)" }}>{sbUser?.email}</div>
                 <button onClick={async () => {
-                  await supabase?.auth.signOut();
+                  try { await supabase?.auth.signOut(); } catch(e) {}
                   setSbUser(null);
-                  window.location.reload();
+                  setAuthOpen(false);
                 }} className="ht-chip w-full text-center text-xs flex items-center justify-center gap-1.5" style={{ color:"var(--red)", borderColor:"var(--red)" }}>
                   Sign Out of HoloHQ
                 </button>
