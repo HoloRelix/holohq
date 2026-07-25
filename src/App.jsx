@@ -2489,13 +2489,23 @@ export default function HoloHQApp() {
             );
           })()}
 
-          <div className="px-4 mb-3" style={{ display:"flex", flexDirection:"column", gap:8 }}>
+          {/* Price & Label */}
+          <div className="px-4 mb-3">
+            <button onClick={() => { setTab("tools"); setToolsView("pricer"); }} className="ht-btn-primary rounded-xl py-3 w-full flex items-center justify-center gap-2 text-sm font-semibold">
+              <Tag size={15} /> Price &amp; Label These Cards
+            </button>
+          </div>
+
+          {/* search + controls */}
+          <div className="px-4 mb-3" style={{ display:"flex", flexDirection:"column", gap:8, width:"100%", boxSizing:"border-box" }}>
             <input value={allItemsSearch} onChange={(e) => setAllItemsSearch(e.target.value)}
               placeholder="Search your collection..." className="ht-input rounded-lg px-3 py-2 text-sm w-full" />
             <div style={{ display:"flex", gap:6, alignItems:"center", width:"100%" }}>
+              {/* filter chips */}
               {[["all","All"],["cards","Cards"],["sealed","Sealed"]].map(([k,label]) => (
                 <button key={k} onClick={() => setAllItemsFilter(k)} className={`ht-chip flex-shrink-0 ${allItemsFilter===k?"ht-chip-active":""}`}>{label}</button>
               ))}
+              {/* sort */}
               <select value={allItemsSort} onChange={(e) => setAllItemsSort(e.target.value)} className="ht-input rounded-md px-2 py-1.5 text-xs" style={{ flex:1, minWidth:0 }}>
                 <option value="value" style={{ background:"var(--panel-2)" }}>Highest Value</option>
                 <option value="priceLow" style={{ background:"var(--panel-2)" }}>Price: Low to High</option>
@@ -2513,42 +2523,82 @@ export default function HoloHQApp() {
               <button onClick={exportFullBackup} className="ht-chip flex-shrink-0 flex items-center gap-1" style={{ fontSize:11 }}>
                 <Download size={12} /> Export
               </button>
+              {/* list/grid toggle */}
+              <div className="flex rounded-lg overflow-hidden flex-shrink-0" style={{ border:"1px solid var(--line)" }}>
+                <button onClick={() => setPortfolioViewMode("list")} className="px-2.5 py-1.5" style={{ background: portfolioViewMode==="list" ? "var(--purple)" : "var(--panel-2)" }}>
+                  <Layers size={13} color={portfolioViewMode==="list" ? "#fff" : "var(--muted)"} />
+                </button>
+                <button onClick={() => setPortfolioViewMode("grid")} className="px-2.5 py-1.5" style={{ background: portfolioViewMode==="grid" ? "var(--purple)" : "var(--panel-2)" }}>
+                  <LayoutGrid size={13} color={portfolioViewMode==="grid" ? "#fff" : "var(--muted)"} />
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="px-4 flex flex-col gap-2 pb-6">
-            {items.map(it => it.kind === "card" ? (
-              <div key={it.key} onClick={() => openCardDetail(it.data)} className="ht-card p-3 flex items-center gap-3" style={{ cursor: "pointer" }}>
-                <CatDot category={it.data.category} />
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium truncate">{it.data.name}</div>
-                  <div className="text-xs truncate" style={{ color: "var(--muted)" }}>{it.data.condition} · qty {it.data.qty} · {it.data.portfolioName}</div>
+          {/* items */}
+          <div className={portfolioViewMode === "grid" ? "px-4 mb-6 grid grid-cols-3 gap-2" : "px-4 flex flex-col gap-2 mb-6"}>
+            {items.map(it => {
+              const isCard = it.kind === "card";
+              const name = isCard ? it.data.name : it.data.productName;
+              const sub = isCard ? it.data.set : "Sealed";
+              const condition = isCard ? it.data.condition : null;
+              const price = isCard ? (it.data.price || 0) : it.data.marketEach;
+              const profit = isCard && it.data.costBasis != null ? (it.data.price - it.data.costBasis) * it.data.qty : null;
+              const trendPct = isCard ? (it.data.trendPct || 0) : sealedItemTrendPct(it.data.productName);
+              const img = isCard ? findCatalogImage(it.data.name, it.data.set) : null;
+              const portfolioName = it.data.portfolioName;
+              const onClick = () => isCard ? openCardDetail(it.data) : openSealedDetail(it.data);
+
+              if (portfolioViewMode === "grid") return (
+                <div key={it.key} onClick={onClick} className="ht-card" style={{ cursor:"pointer", display:"flex", flexDirection:"column", padding:0, overflow:"hidden" }}>
+                  <div style={{ position:"relative", background:"var(--panel-2)", aspectRatio:"63/88", overflow:"hidden" }}>
+                    {img
+                      ? <img src={img} alt={name} style={{ width:"100%", height:"100%", objectFit:"contain" }} onError={e=>e.target.style.display="none"} />
+                      : <div style={{ width:"100%", height:"100%", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:6 }}>
+                          {isCard ? <Sparkles size={22} color="var(--muted)" /> : <Layers size={22} color="var(--muted)" />}
+                          <span style={{ fontSize:9, color:"var(--muted)", textAlign:"center", padding:"0 6px" }}>{name}</span>
+                        </div>
+                    }
+                    {it.data.qty > 1 && <span style={{ position:"absolute", top:4, left:4, fontFamily:"'JetBrains Mono',monospace", fontSize:9, fontWeight:700, color:"#F1EEFA", background:"rgba(10,9,18,0.88)", padding:"2px 5px", borderRadius:3, border:"1px solid var(--line)" }}>×{it.data.qty}</span>}
+                  </div>
+                  <div style={{ padding:"9px 10px 11px", borderTop:"1px solid var(--line)" }}>
+                    <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:4, marginBottom:3 }}>
+                      <div style={{ fontSize:12, fontWeight:600, color:"var(--text)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", flex:1, minWidth:0 }}>{name}</div>
+                      {condition && <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, fontWeight:700, color:"var(--cyan)", background:"rgba(45,212,232,0.1)", padding:"2px 6px", borderRadius:4, border:"1px solid rgba(45,212,232,0.25)", flexShrink:0, whiteSpace:"nowrap" }}>{condition.replace("Raw ","")}</span>}
+                    </div>
+                    <div style={{ fontSize:10, color:"var(--muted)", marginBottom:7, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{sub} · {portfolioName}</div>
+                    <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between" }}>
+                      <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:15, fontWeight:700, color:"var(--green)" }}>${Math.round(price)}</span>
+                      {profit !== null
+                        ? <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:11, fontWeight:600, color:profit>=0?"var(--green)":"var(--red)" }}>{profit>=0?"+":"-"}${Math.round(Math.abs(profit))}</span>
+                        : <TrendTag pct={trendPct} />
+                      }
+                    </div>
+                  </div>
                 </div>
-                <div className="text-right flex-shrink-0">
-                  <div className="ht-mono text-sm font-semibold">${((it.data.price || 0) * it.data.qty).toFixed(2)}</div>
-                  <TrendTag pct={it.data.trendPct || 0} />
+              );
+
+              return (
+                <div key={it.key} onClick={onClick} className="ht-card p-3 flex items-center gap-3" style={{ cursor:"pointer" }}>
+                  {img
+                    ? <img src={img} alt={name} style={{ width:36, height:50, objectFit:"contain", flexShrink:0, borderRadius:4, background:"var(--panel-2)" }} onError={e=>e.target.style.display="none"} />
+                    : <CatDot category={isCard ? it.data.category : "sealed"} />
+                  }
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium truncate">{name}</div>
+                    <div className="text-xs truncate" style={{ color:"var(--muted)" }}>{condition ? condition.replace("Raw ","") + " · " : ""}{sub} · {portfolioName}</div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <div className="ht-mono text-sm font-semibold">${((price) * it.data.qty).toFixed(2)}</div>
+                    <TrendTag pct={trendPct} />
+                  </div>
+                  <button onClick={(e) => { e.stopPropagation(); isCard ? toggleCardWatch(it.data) : toggleSealedWatch(it.data); }} className="rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0" style={{ background: (isCard ? isCardWatched(it.data) : isSealedWatched(it.data)) ? "var(--cyan)" : "var(--panel-2)", border:"1px solid var(--line)" }}>
+                    <Bell size={11} color={(isCard ? isCardWatched(it.data) : isSealedWatched(it.data)) ? "#0A0912" : "var(--muted)"} />
+                  </button>
                 </div>
-                <button onClick={(e) => { e.stopPropagation(); toggleCardWatch(it.data); }} className="rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0" style={{ background: isCardWatched(it.data) ? "var(--cyan)" : "var(--panel-2)", border: "1px solid var(--line)" }}>
-                  <Bell size={11} color={isCardWatched(it.data) ? "#0A0912" : "var(--muted)"} />
-                </button>
-              </div>
-            ) : (
-              <div key={it.key} onClick={() => openSealedDetail(it.data)} className="ht-card p-3 flex items-center gap-3" style={{ cursor: "pointer" }}>
-                <CatDot category={it.data.category} />
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium truncate">{it.data.productName}</div>
-                  <div className="text-xs truncate" style={{ color: "var(--muted)" }}>Sealed · {it.data.qty} unit{it.data.qty === 1 ? "" : "s"} · {it.data.portfolioName}</div>
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <div className="ht-mono text-sm font-semibold">${(it.data.marketEach * it.data.qty).toFixed(2)}</div>
-                  <TrendTag pct={sealedItemTrendPct(it.data.productName)} />
-                </div>
-                <button onClick={(e) => { e.stopPropagation(); toggleSealedWatch(it.data); }} className="rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0" style={{ background: isSealedWatched(it.data) ? "var(--cyan)" : "var(--panel-2)", border: "1px solid var(--line)" }}>
-                  <Bell size={11} color={isSealedWatched(it.data) ? "#0A0912" : "var(--muted)"} />
-                </button>
-              </div>
-            ))}
-            {items.length === 0 && <p className="text-xs text-center py-8" style={{ color: "var(--muted)" }}>Nothing here yet.</p>}
+              );
+            })}
+            {items.length === 0 && <p className="text-xs text-center py-8" style={{ color:"var(--muted)" }}>Nothing here yet.</p>}
           </div>
         </div>
         );
