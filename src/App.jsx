@@ -3084,23 +3084,24 @@ export default function HoloHQApp() {
                     }
                     {r.qty > 1 && <span style={{ position:"absolute", top:4, left:4, fontFamily:"'JetBrains Mono', monospace", fontSize:9, fontWeight:700, color:"#F1EEFA", background:"rgba(10,9,18,0.88)", padding:"2px 5px", borderRadius:3, border:"1px solid var(--line)" }}>×{r.qty}</span>}
                   </div>
-                  {/* info panel — clean, no overlays on image */}
-                  <div style={{ padding:"10px 11px 12px", borderTop:"1px solid var(--line)", display:"flex", flexDirection:"column", gap:4 }}>
-                    {/* name */}
-                    <div style={{ fontSize:12, fontWeight:600, color:"var(--text)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{r.name}</div>
-                    {/* set */}
-                    <div style={{ fontSize:11, color:"var(--muted)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{r.set}</div>
-                    {/* condition + qty row */}
-                    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                      <span style={{ fontFamily:"'JetBrains Mono', monospace", fontSize:11, fontWeight:700, color:"var(--cyan)", background:"rgba(45,212,232,0.1)", padding:"2px 7px", borderRadius:4, border:"1px solid rgba(45,212,232,0.25)" }}>
+                  {/* info panel */}
+                  <div style={{ padding:"9px 10px 11px", borderTop:"1px solid var(--line)" }}>
+                    {/* row 1: name + condition badge top-right */}
+                    <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:4, marginBottom:3 }}>
+                      <div style={{ fontSize:12, fontWeight:600, color:"var(--text)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", flex:1, minWidth:0 }}>{r.name}</div>
+                      <span style={{ fontFamily:"'JetBrains Mono', monospace", fontSize:10, fontWeight:700, color:"var(--cyan)", background:"rgba(45,212,232,0.1)", padding:"2px 6px", borderRadius:4, border:"1px solid rgba(45,212,232,0.25)", flexShrink:0, whiteSpace:"nowrap" }}>
                         {r.condition?.replace("Raw ","")}
                       </span>
-                      <TrendTag pct={r.trendPct} />
                     </div>
-                    {/* price + profit */}
-                    <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", marginTop:2 }}>
-                      <span style={{ fontFamily:"'JetBrains Mono', monospace", fontSize:15, fontWeight:700, color:"var(--green)" }}>${r.price?.toFixed(2)}</span>
-                      {profit !== null && <span style={{ fontFamily:"'JetBrains Mono', monospace", fontSize:11, fontWeight:600, color: profit>=0?"var(--green)":"var(--red)" }}>{profit>=0?"+":"-"}${Math.abs(profit).toFixed(2)}</span>}
+                    {/* row 2: set */}
+                    <div style={{ fontSize:10, color:"var(--muted)", marginBottom:7, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{r.set}</div>
+                    {/* row 3: price + trend/profit */}
+                    <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between" }}>
+                      <span style={{ fontFamily:"'JetBrains Mono', monospace", fontSize:15, fontWeight:700, color:"var(--green)" }}>${Math.round(r.price || 0)}</span>
+                      {profit !== null
+                        ? <span style={{ fontFamily:"'JetBrains Mono', monospace", fontSize:11, fontWeight:600, color: profit>=0?"var(--green)":"var(--red)" }}>{profit>=0?"+":"-"}${Math.round(Math.abs(profit))}</span>
+                        : <TrendTag pct={r.trendPct} />
+                      }
                     </div>
                   </div>
                 </div>
