@@ -1,3 +1,4 @@
+// v2.1
 import React, { useState, useRef, useCallback, useMemo, useLayoutEffect, useEffect } from "react";
 import Papa from "papaparse";
 import { supabase, sbSignIn, sbSignUp, sbSignOut, sbSave, sbLoad, sbOnAuthChange } from "./supabase.js";
