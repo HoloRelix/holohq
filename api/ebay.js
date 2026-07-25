@@ -1,4 +1,3 @@
-// Node.js serverless function (not edge) for reliable btoa encoding
 const https = require('https');
 
 function makeRequest(options, body) {
@@ -29,6 +28,7 @@ module.exports = async (req, res) => {
 
   try {
     // Get token
+    const tokenBody = 'grant_type=client_credentials&scope=https%3A%2F%2Fapi.ebay.com%2Foauth%2Fapi_scope';
     const tokenRes = await makeRequest({
       hostname: 'api.ebay.com',
       path: '/identity/v1/oauth2/token',
@@ -36,12 +36,13 @@ module.exports = async (req, res) => {
       headers: {
         'Authorization': `Basic ${credentials}`,
         'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(tokenBody),
       }
-    }, 'grant_type=client_credentials&scope=https%3A%2F%2Fapi.ebay.com%2Foauth%2Fapi_scope');
+    }, tokenBody);
 
     const tokenData = JSON.parse(tokenRes.body);
     if (!tokenData.access_token) {
-      return res.status(500).json({ error: tokenData.error_description || 'Token failed', raw: tokenRes.body });
+      return res.status(500).json({ error: tokenData.error_description || 'Token failed' });
     }
 
     const token = tokenData.access_token;
@@ -52,18 +53,28 @@ module.exports = async (req, res) => {
     else if (condition && condition.startsWith('Raw ')) q += ` ${condition.replace('Raw ', '')}`;
     if (set && set.length < 25) q += ` ${set}`;
 
-    const searchPath = `/buy/browse/v1/item_summary/search?q=${encodeURIComponent(q)}&limit=20&sort=price&category_ids=2536`;
+    // Use keyword search without category restriction first
+    const qs = new URLSearchParams({
+      q,
+      limit: '20',
+      sort: 'price',
+    }).toString();
+
     const searchRes = await makeRequest({
       hostname: 'api.ebay.com',
-      path: searchPath,
+      path: `/buy/browse/v1/item_summary/search?${qs}`,
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
         'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US',
+        'Content-Type': 'application/json',
       }
     });
 
-    const data = JSON.parse(searchRes.body);
+    let data;
+    try { data = JSON.parse(searchRes.body); }
+    catch(e) { return res.status(500).json({ error: `eBay parse error: ${searchRes.body.slice(0, 200)}` }); }
+
     if (data.errors) return res.status(500).json({ error: data.errors[0]?.longMessage || 'Search error' });
 
     const items = (data.itemSummaries || [])
