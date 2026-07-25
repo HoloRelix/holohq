@@ -716,10 +716,10 @@ export default function HoloHQApp() {
   const [ebayData, setEbayData] = useState(null);
   const [ebayLoading, setEbayLoading] = useState(false);
 
-  const fetchEbayPrice = async (name, set, condition) => {
+  const fetchEbayPrice = async (name, set, condition, category) => {
     setEbayLoading(true); setEbayData(null);
     try {
-      const res = await fetch(`/api/ebay?name=${encodeURIComponent(name)}&set=${encodeURIComponent(set||"")}&condition=${encodeURIComponent(condition||"")}`);
+      const res = await fetch(`/api/ebay?name=${encodeURIComponent(name)}&set=${encodeURIComponent(set||"")}&condition=${encodeURIComponent(condition||"")}&category=${encodeURIComponent(category||"pokemon")}`);
       const data = await res.json();
       if (!data.error) setEbayData(data);
       else setEbayData({ error: data.error, stats: null, items: [] });
@@ -729,7 +729,7 @@ export default function HoloHQApp() {
   const [cardAddPickerOpen, setCardAddPickerOpen] = useState(false);
   const [sealedAddPickerOpen, setSealedAddPickerOpen] = useState(false);
   const [detailAddConfirm, setDetailAddConfirm] = useState("");
-  const openCardDetail = (row) => { const cond = CONDITION_MULT[row.condition] != null ? row.condition : "Raw NM"; setCardDetail(row); setChartRange("1mo"); setChartCondition(cond); setGradeMode(cond.startsWith("Raw ") ? "raw" : "graded"); setChartOpen(true); setCardAddPickerOpen(false); setEbayData(null); setTimeout(() => fetchEbayPrice(row.name, row.set, row.condition), 100); };
+  const openCardDetail = (row) => { const cond = CONDITION_MULT[row.condition] != null ? row.condition : "Raw NM"; setCardDetail(row); setChartRange("1mo"); setChartCondition(cond); setGradeMode(cond.startsWith("Raw ") ? "raw" : "graded"); setChartOpen(true); setCardAddPickerOpen(false); setEbayData(null); setTimeout(() => fetchEbayPrice(row.name, row.set, row.condition, row.category), 100); };
   const openSealedDetail = (item) => { setSealedDetail(item); setChartRange("1mo"); setSealedAddPickerOpen(false); };
   const addCardDetailToPortfolio = (portfolioId) => { haptic(40);
     const r = cardDetail;
@@ -2039,14 +2039,14 @@ export default function HoloHQApp() {
           })()}
 
           {/* eBay market data */}
-          <div className="px-4 mb-3">
+          <div className="px-4 mb-3 mt-1">
             <div className="ht-card p-3">
               {/* header */}
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-semibold" style={{ color:"var(--muted)", letterSpacing:"0.06em" }}>EBAY MARKET</span>
                 <div className="flex items-center gap-2">
                   {ebayLoading && <Loader2 size={12} color="var(--cyan)" style={{ animation:"spin 1s linear infinite" }} />}
-                  {!ebayLoading && ebayData && <button onClick={() => fetchEbayPrice(r.name, r.set, r.condition)} style={{ color:"var(--muted)", fontSize:11 }}><RefreshCw size={11} /></button>}
+                  {!ebayLoading && ebayData && <button onClick={() => fetchEbayPrice(r.name, r.set, r.condition, r.category)} style={{ color:"var(--muted)", fontSize:11 }}><RefreshCw size={11} /></button>}
                 </div>
               </div>
 
