@@ -729,7 +729,7 @@ export default function HoloHQApp() {
   const [cardAddPickerOpen, setCardAddPickerOpen] = useState(false);
   const [sealedAddPickerOpen, setSealedAddPickerOpen] = useState(false);
   const [detailAddConfirm, setDetailAddConfirm] = useState("");
-  const openCardDetail = (row) => { const cond = CONDITION_MULT[row.condition] != null ? row.condition : "Raw NM"; setCardDetail(row); setChartRange("1mo"); setChartCondition(cond); setGradeMode(cond.startsWith("Raw ") ? "raw" : "graded"); setChartOpen(true); setCardAddPickerOpen(false); };
+  const openCardDetail = (row) => { const cond = CONDITION_MULT[row.condition] != null ? row.condition : "Raw NM"; setCardDetail(row); setChartRange("1mo"); setChartCondition(cond); setGradeMode(cond.startsWith("Raw ") ? "raw" : "graded"); setChartOpen(true); setCardAddPickerOpen(false); setEbayData(null); setTimeout(() => fetchEbayPrice(row.name, row.set, row.condition), 100); };
   const openSealedDetail = (item) => { setSealedDetail(item); setChartRange("1mo"); setSealedAddPickerOpen(false); };
   const addCardDetailToPortfolio = (portfolioId) => { haptic(40);
     const r = cardDetail;
@@ -1923,15 +1923,26 @@ export default function HoloHQApp() {
             </div>
             <div className="flex-1 min-w-0">
               {r.condition && <div className="text-xs mb-2" style={{ color: "var(--muted)" }}>Owned as {r.condition}</div>}
-              <div className="ht-mono font-bold leading-none" style={{ fontSize: 34 }}>${(selectedPrice ?? 0).toFixed(2)}</div>
+              <div className="ht-mono font-bold leading-none" style={{ fontSize: 34 }}>
+                ${ebayData?.stats?.median ? ebayData.stats.median.toFixed(2) : (selectedPrice ?? 0).toFixed(2)}
+                {ebayData?.stats?.median && <span style={{ fontSize:11, fontWeight:400, color:"var(--muted)", marginLeft:6 }}>eBay</span>}
+              </div>
               <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:6 }}>
-                <TrendTag pct={Math.round(changePct * 10) / 10} />
+                {ebayLoading && <span style={{ fontSize:10, color:"var(--cyan)" }}>Fetching eBay…</span>}
+                {!ebayLoading && <TrendTag pct={Math.round(changePct * 10) / 10} />}
                 <span className="ht-mono text-xs" style={{ color: "var(--muted)" }}>{activeCondition.startsWith("Raw ") ? activeCondition.replace("Raw ","") : activeCondition}</span>
               </div>
               <div style={{ display:"flex", gap:16, marginTop:10 }}>
-                <div><div className="text-xs" style={{ color: "var(--muted)" }}>High</div><div className="ht-mono text-xs font-semibold">${high.toFixed(2)}</div></div>
-                <div><div className="text-xs" style={{ color: "var(--muted)" }}>Low</div><div className="ht-mono text-xs font-semibold">${low.toFixed(2)}</div></div>
-                <div><div className="text-xs" style={{ color: "var(--muted)" }}>{thirdStat.label}</div><div className="ht-mono text-xs font-semibold">{thirdStat.value}</div></div>
+                {ebayData?.stats ? (<>
+                  <div><div className="text-xs" style={{ color:"var(--muted)" }}>Low</div><div className="ht-mono text-xs font-semibold">${ebayData.stats.low.toFixed(0)}</div></div>
+                  <div><div className="text-xs" style={{ color:"var(--muted)" }}>Avg</div><div className="ht-mono text-xs font-semibold">${ebayData.stats.avg.toFixed(0)}</div></div>
+                  <div><div className="text-xs" style={{ color:"var(--muted)" }}>High</div><div className="ht-mono text-xs font-semibold">${ebayData.stats.high.toFixed(0)}</div></div>
+                  <div><div className="text-xs" style={{ color:"var(--muted)" }}>Sales</div><div className="ht-mono text-xs font-semibold">{ebayData.stats.count}</div></div>
+                </>) : (<>
+                  <div><div className="text-xs" style={{ color: "var(--muted)" }}>High</div><div className="ht-mono text-xs font-semibold">${high.toFixed(2)}</div></div>
+                  <div><div className="text-xs" style={{ color: "var(--muted)" }}>Low</div><div className="ht-mono text-xs font-semibold">${low.toFixed(2)}</div></div>
+                  <div><div className="text-xs" style={{ color: "var(--muted)" }}>{thirdStat.label}</div><div className="ht-mono text-xs font-semibold">{thirdStat.value}</div></div>
+                </>)}
               </div>
               {profit !== null && (
                 <div className="mt-2 text-xs" style={{ color: profit >= 0 ? "var(--green)" : "var(--red)" }}>
