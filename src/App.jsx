@@ -2088,7 +2088,7 @@ export default function HoloHQApp() {
                   <div className="text-xs font-semibold mb-1.5" style={{ color:"var(--muted)", letterSpacing:"0.05em" }}>RECENTLY SOLD</div>
                   <a href={(() => {
                     const cond = activeCondition?.startsWith("Raw") ? activeCondition.replace("Raw ","") : (activeCondition||"");
-                    const q = `${r.name} ${r.set||""} ${cond} pokemon`.trim();
+                    const q = `${r.name} ${r.set||""} "${cond}" pokemon`.trim();
                     return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(q)}&LH_Complete=1&LH_Sold=1&LH_TitleDesc=0&_sop=13`;
                   })()}
                     target="_blank" rel="noopener noreferrer"
@@ -2113,7 +2113,7 @@ export default function HoloHQApp() {
                 ) : (
                   <a href={(() => {
                     const cond = activeCondition?.startsWith("Raw") ? activeCondition.replace("Raw ","") : (activeCondition||"");
-                    const q = `${r.name} ${r.set||""} ${cond} pokemon`.trim();
+                    const q = `${r.name} ${r.set||""} "${cond}" pokemon`.trim();
                     return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(q)}&LH_TitleDesc=0&_sop=15`;
                   })()} target="_blank" rel="noopener noreferrer"
                     className="ht-card p-2.5 flex items-center justify-between gap-2" style={{ textDecoration:"none" }}>
