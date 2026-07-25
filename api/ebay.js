@@ -1,22 +1,20 @@
-const https = require('https');
+export const config = { runtime: "edge" };
 
-function httpGet(options) {
-  return new Promise((resolve, reject) => {
-    https.get(options, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => resolve({ status: res.statusCode, body: data }));
-    }).on('error', reject);
+async function getToken(id, secret) {
+  const enc = new TextEncoder();
+  const bytes = enc.encode(`${id}:${secret}`);
+  let bin = ''; bytes.forEach(b => bin += String.fromCharCode(b));
+  const res = await fetch("https://api.ebay.com/identity/v1/oauth2/token", {
+    method: "POST",
+    headers: { "Authorization": `Basic ${btoa(bin)}`, "Content-Type": "application/x-www-form-urlencoded" },
+    body: "grant_type=client_credentials&scope=https%3A%2F%2Fapi.ebay.com%2Foauth%2Fapi_scope",
   });
+  const data = await res.json();
+  if (!data.access_token) throw new Error(data.error_description || "Token failed");
+  return data.access_token;
 }
 
-module.exports = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Content-Type', 'application/json');
-
-  const { name, set, condition, category } = req.query;
-  const appId = process.env.EBAY_CLIENT_ID;
-
+function buildQuery(name, set, condition, category) {
   const isGraded = condition && condition.match(/^(PSA|BGS|CGC)\s*[\d.]+/i);
   let parts = [`"${name}"`];
   if (isGraded) {
@@ -26,76 +24,64 @@ module.exports = async (req, res) => {
     parts.push('-PSA -BGS -CGC -SGC');
   }
   if (set && set.length < 30) parts.push(`"${set}"`);
-  parts.push(category === 'onepiece' ? 'one piece' : 
-             (category === 'basketball' || category === 'football' || category === 'baseball') ? 'card' : 'pokemon');
-  const q = parts.join(' ');
+  parts.push(category === 'onepiece' ? 'one piece' :
+    (category === 'basketball' || category === 'football' || category === 'baseball') ? 'card' : 'pokemon');
+  return parts.join(' ');
+}
 
-  // Finding API via XML endpoint which has better server support
-  const params = new URLSearchParams({
-    'OPERATION-NAME': 'findCompletedItems',
-    'SERVICE-VERSION': '1.0.0',
-    'SECURITY-APPNAME': appId,
-    'RESPONSE-DATA-FORMAT': 'JSON',
-    'keywords': q,
-    'categoryId': '2536',
-    'itemFilter(0).name': 'SoldItemsOnly',
-    'itemFilter(0).value': 'true',
-    'sortOrder': 'EndTimeSoonest',
-    'paginationInput.entriesPerPage': '10',
-  });
+export default async function handler(req) {
+  const { searchParams } = new URL(req.url);
+  const name = searchParams.get("name") || "";
+  const set = searchParams.get("set") || "";
+  const condition = searchParams.get("condition") || "";
+  const category = searchParams.get("category") || "pokemon";
+  const hdrs = { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" };
 
-  const soldResult = await httpGet({
-    hostname: 'svcs.ebay.com',
-    path: `/services/search/FindingService/v1?${params.toString()}`,
-    headers: {
-      'User-Agent': 'HoloHQ/1.0 (https://holohq.vercel.app)',
-      'Accept': 'application/json',
-      'X-EBAY-SOA-OPERATION-NAME': 'findCompletedItems',
-      'X-EBAY-SOA-SERVICE-VERSION': '1.0.0',
-      'X-EBAY-SOA-SECURITY-APPNAME': appId,
-    }
-  });
-
-  // Check if HTML error
-  if (soldResult.body.startsWith('<') || soldResult.body.startsWith('A server')) {
-    // Finding API blocked — fall back to OAuth Browse API
-    return res.json({ 
-      error: `Finding API unavailable: ${soldResult.body.slice(0, 100)}`,
-      sold: [],
-      listed: [],
-      stats: null
-    });
-  }
+  if (!name) return new Response(JSON.stringify({ error: "name required" }), { status: 400, headers: hdrs });
+  const id = process.env.EBAY_CLIENT_ID;
+  const secret = process.env.EBAY_CLIENT_SECRET;
+  if (!id || !secret) return new Response(JSON.stringify({ error: "credentials not configured" }), { status: 500, headers: hdrs });
 
   try {
-    const data = JSON.parse(soldResult.body);
-    const items = data?.findCompletedItemsResponse?.[0]?.searchResult?.[0]?.item || [];
-    const sold = items
-      .filter(i => i.sellingStatus?.[0]?.sellingState?.[0] === 'EndedWithSales')
-      .map(i => ({
-        title: i.title?.[0],
-        price: parseFloat(i.sellingStatus?.[0]?.currentPrice?.[0]?.['__value__'] || 0),
-        url: i.viewItemURL?.[0],
-      }))
-      .filter(i => i.price > 0);
+    const token = await getToken(id, secret);
+    const q = buildQuery(name, set, condition, category);
 
-    const prices = sold.map(i => i.price).sort((a,b) => a-b);
-    const median = prices.length ? prices[Math.floor(prices.length / 2)] : 0;
-    const avg = prices.length ? prices.reduce((s,p) => s+p, 0) / prices.length : 0;
+    // Use Browse API with two different offset pages to get variety
+    const [page1, page2] = await Promise.all([
+      fetch(`https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(q)}&limit=8&sort=price`, {
+        headers: { "Authorization": `Bearer ${token}`, "X-EBAY-C-MARKETPLACE-ID": "EBAY_US" }
+      }).then(r => r.json()),
+      fetch(`https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(q)}&limit=8&sort=-price`, {
+        headers: { "Authorization": `Bearer ${token}`, "X-EBAY-C-MARKETPLACE-ID": "EBAY_US" }
+      }).then(r => r.json()),
+    ]);
 
-    res.json({
+    const mapItem = i => ({ title: i.title, price: parseFloat(i.price?.value || 0), url: i.itemWebUrl });
+    const cheap = (page1.itemSummaries || []).map(mapItem).filter(i => i.price > 0);
+    const expensive = (page2.itemSummaries || []).map(mapItem).filter(i => i.price > 0);
+
+    const cheapUrls = new Set(cheap.map(i => i.url));
+    const uniqueExpensive = expensive.filter(i => !cheapUrls.has(i.url));
+
+    const prices = cheap.map(i => i.price);
+    const sorted = [...prices].sort((a,b) => a-b);
+    const median = sorted.length ? sorted[Math.floor(sorted.length / 2)] : 0;
+    const avg = sorted.length ? sorted.reduce((s,p) => s+p, 0) / sorted.length : 0;
+
+    return new Response(JSON.stringify({
       query: q,
-      sold,
-      listed: [],
-      stats: prices.length ? {
+      sold: cheap.slice(0, 6),
+      listed: uniqueExpensive.length > 0 ? uniqueExpensive.slice(0, 6) : cheap.slice(0, 6),
+      stats: sorted.length ? {
         avg: Math.round(avg * 100) / 100,
         median: Math.round(median * 100) / 100,
-        low: Math.round(prices[0] * 100) / 100,
-        high: Math.round(prices[prices.length-1] * 100) / 100,
-        count: prices.length
+        low: Math.round(sorted[0] * 100) / 100,
+        high: Math.round(sorted[sorted.length-1] * 100) / 100,
+        count: sorted.length
       } : null
-    });
-  } catch(e) {
-    res.status(500).json({ error: e.message, raw: soldResult.body.slice(0, 200) });
+    }), { status: 200, headers: hdrs });
+
+  } catch(err) {
+    return new Response(JSON.stringify({ error: err.message, sold: [], listed: [], stats: null }), { status: 200, headers: hdrs });
   }
-};
+}
