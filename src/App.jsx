@@ -1659,6 +1659,11 @@ export default function HoloHQApp() {
 
   // ---- Supabase auth listener ----
   useEffect(() => {
+    // Check existing session on mount
+    supabase?.auth.getSession().then(({ data: { session } }) => {
+      const user = session?.user ?? null;
+      if (user) setSbUser(user);
+    });
     const unsub = sbOnAuthChange(async (_event, session) => {
       const user = session?.user ?? null;
       setSbUser(user);
