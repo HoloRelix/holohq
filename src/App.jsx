@@ -3007,7 +3007,7 @@ export default function HoloHQApp() {
           </div>
 
           {/* search + sort + view toggle */}
-          <div className="px-4 mb-3" style={{ display:"flex", flexDirection:"column", gap:8 }}>
+          <div className="px-4 mb-3" style={{ display:"flex", flexDirection:"column", gap:8, width:"100%", boxSizing:"border-box" }}>
             {/* row 1: search */}
             <input value={portfolioDetailSearch} onChange={(e) => setPortfolioDetailSearch(e.target.value)}
               placeholder="Search this portfolio..." className="ht-input rounded-lg px-3 py-2 text-sm w-full" />
@@ -3024,7 +3024,7 @@ export default function HoloHQApp() {
               </select>
               {/* sort */}
               <select value={portfolioDetailSort} onChange={e => setPortfolioDetailSort(e.target.value)}
-                className="ht-input rounded-lg px-2 py-1.5 text-xs flex-shrink-0" style={{ maxWidth:140 }}>
+                className="ht-input rounded-lg px-2 py-1.5 text-xs" style={{ flex:1, minWidth:0 }}>
                 <option value="valueHigh" style={{ background:"var(--panel-2)" }}>Highest Value</option>
                 <option value="priceLow" style={{ background:"var(--panel-2)" }}>Price: Low to High</option>
                 <option value="priceHigh" style={{ background:"var(--panel-2)" }}>Price: High to Low</option>
