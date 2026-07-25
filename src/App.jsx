@@ -2100,18 +2100,29 @@ export default function HoloHQApp() {
               )}
 
               {/* Active listings */}
-              {ebayData?.listed?.length > 0 && (
-                <div>
-                  <div className="text-xs font-semibold mb-1.5" style={{ color:"var(--muted)", letterSpacing:"0.05em" }}>ACTIVE LISTINGS · LOW TO HIGH</div>
-                  {ebayData.listed.slice(0,6).map((item, i, arr) => (
+              <div>
+                <div className="text-xs font-semibold mb-1.5" style={{ color:"var(--muted)", letterSpacing:"0.05em" }}>ACTIVE LISTINGS · LOW TO HIGH</div>
+                {ebayData?.listed?.length > 0 ? (
+                  ebayData.listed.slice(0,6).map((item, i, arr) => (
                     <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
                       style={{ textDecoration:"none", display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, padding:"6px 0", borderBottom: i < arr.length-1 ? "1px solid var(--line)" : "none" }}>
                       <span style={{ fontSize:11, color:"var(--muted)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", flex:1 }}>{item.title}</span>
                       <span className="ht-mono" style={{ fontSize:12, fontWeight:600, color:"var(--text)", flexShrink:0 }}>${item.price.toFixed(2)}</span>
                     </a>
-                  ))}
-                </div>
-              )}
+                  ))
+                ) : (
+                  <a href={(() => {
+                    const cond = activeCondition?.startsWith("Raw") ? activeCondition.replace("Raw ","") : (activeCondition||"");
+                    const q = `${r.name} ${r.set||""} ${cond} pokemon`.trim();
+                    return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(q)}&LH_TitleDesc=0&_sop=15`;
+                  })()} target="_blank" rel="noopener noreferrer"
+                    className="ht-card p-2.5 flex items-center justify-between gap-2" style={{ textDecoration:"none" }}>
+                    <span style={{ fontSize:11, color:"var(--muted)" }}>View active listings on eBay</span>
+                    <span style={{ fontSize:11, color:"var(--cyan)" }}>Open ↗</span>
+                  </a>
+                )}
+              </div>
+              {ebayData?.query && <div className="text-xs mt-2" style={{ color:"var(--line)", fontSize:9 }}>Query: {ebayData.query}</div>}
             </div>
           </div>
 
