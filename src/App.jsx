@@ -2085,7 +2085,7 @@ export default function HoloHQApp() {
               {ebayData?.sold?.length === 0 && !ebayLoading && (
                 <div className="mb-3">
                   <div className="text-xs font-semibold mb-1.5" style={{ color:"var(--muted)", letterSpacing:"0.05em" }}>RECENTLY SOLD</div>
-                  <a href={`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent((r.name||"")+" "+(r.set||"")+" "+(r.condition?.startsWith("Raw")?"":r.condition||"")+" pokemon")}&LH_Complete=1&LH_Sold=1&_sop=13`}
+                  <a href={`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(((r.name||"")+" "+(r.set||"")+" "+(activeCondition?.startsWith("Raw")?activeCondition.replace("Raw ",""):activeCondition||"")+" pokemon").trim())}&LH_Complete=1&LH_Sold=1&_sop=13`}
                     target="_blank" rel="noopener noreferrer"
                     className="ht-card p-2.5 flex items-center justify-between gap-2" style={{ textDecoration:"none" }}>
                     <span style={{ fontSize:11, color:"var(--muted)" }}>View sold listings on eBay</span>
