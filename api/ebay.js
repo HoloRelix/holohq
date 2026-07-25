@@ -1,81 +1,57 @@
-const https = require('https');
+export const config = { runtime: "edge" };
 
-function makeRequest(options, body) {
-  return new Promise((resolve, reject) => {
-    const req = https.request(options, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => resolve({ status: res.statusCode, body: data }));
-    });
-    req.on('error', reject);
-    if (body) req.write(body);
-    req.end();
-  });
-}
+export default async function handler(req) {
+  const { searchParams } = new URL(req.url);
+  const name = searchParams.get("name") || "";
+  const set = searchParams.get("set") || "";
+  const condition = searchParams.get("condition") || "";
 
-module.exports = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Content-Type', 'application/json');
-
-  const { name, set, condition } = req.query;
-  if (!name) return res.status(400).json({ error: 'name required' });
+  const headers = { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" };
+  if (!name) return new Response(JSON.stringify({ error: "name required" }), { status: 400, headers });
 
   const id = process.env.EBAY_CLIENT_ID;
   const secret = process.env.EBAY_CLIENT_SECRET;
-  if (!id || !secret) return res.status(500).json({ error: 'credentials not configured' });
-
-  const credentials = Buffer.from(`${id}:${secret}`).toString('base64');
+  if (!id || !secret) return new Response(JSON.stringify({ error: "credentials not configured" }), { status: 500, headers });
 
   try {
-    // Get token
-    const tokenBody = 'grant_type=client_credentials&scope=https%3A%2F%2Fapi.ebay.com%2Foauth%2Fapi_scope';
-    const tokenRes = await makeRequest({
-      hostname: 'api.ebay.com',
-      path: '/identity/v1/oauth2/token',
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${credentials}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Content-Length': Buffer.byteLength(tokenBody),
-      }
-    }, tokenBody);
+    // Use TextEncoder based base64 for edge runtime
+    const enc = new TextEncoder();
+    const credBytes = enc.encode(`${id}:${secret}`);
+    let binary = '';
+    credBytes.forEach(b => binary += String.fromCharCode(b));
+    const encoded = btoa(binary);
 
-    const tokenData = JSON.parse(tokenRes.body);
-    if (!tokenData.access_token) {
-      return res.status(500).json({ error: tokenData.error_description || 'Token failed' });
-    }
+    const tokenRes = await fetch("https://api.ebay.com/identity/v1/oauth2/token", {
+      method: "POST",
+      headers: {
+        "Authorization": `Basic ${encoded}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: "grant_type=client_credentials&scope=https%3A%2F%2Fapi.ebay.com%2Foauth%2Fapi_scope",
+    });
+
+    const tokenText = await tokenRes.text();
+    let tokenData;
+    try { tokenData = JSON.parse(tokenText); } catch(e) { return new Response(JSON.stringify({ error: `Token parse failed: ${tokenText.slice(0,100)}` }), { status: 500, headers }); }
+    if (!tokenData.access_token) return new Response(JSON.stringify({ error: tokenData.error_description || "Token failed", raw: tokenText.slice(0,200) }), { status: 500, headers });
 
     const token = tokenData.access_token;
 
-    // Build query
     let q = name;
-    if (condition && condition.match(/^(PSA|BGS|CGC)\s*\d/)) q += ` ${condition}`;
-    else if (condition && condition.startsWith('Raw ')) q += ` ${condition.replace('Raw ', '')}`;
+    if (condition.match(/^(PSA|BGS|CGC)\s*\d/)) q += ` ${condition}`;
+    else if (condition.startsWith("Raw ")) q += ` ${condition.replace("Raw ", "")}`;
     if (set && set.length < 25) q += ` ${set}`;
 
-    // Use keyword search without category restriction first
-    const qs = new URLSearchParams({
-      q,
-      limit: '20',
-      sort: 'price',
-    }).toString();
-
-    const searchRes = await makeRequest({
-      hostname: 'api.ebay.com',
-      path: `/buy/browse/v1/item_summary/search?${qs}`,
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US',
-        'Content-Type': 'application/json',
-      }
+    const url = `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(q)}&limit=20&sort=price`;
+    const searchRes = await fetch(url, {
+      headers: { "Authorization": `Bearer ${token}`, "X-EBAY-C-MARKETPLACE-ID": "EBAY_US" }
     });
 
+    const searchText = await searchRes.text();
     let data;
-    try { data = JSON.parse(searchRes.body); }
-    catch(e) { return res.status(500).json({ error: `eBay parse error: ${searchRes.body.slice(0, 200)}` }); }
+    try { data = JSON.parse(searchText); } catch(e) { return new Response(JSON.stringify({ error: `Search parse failed (${searchRes.status}): ${searchText.slice(0,200)}` }), { status: 500, headers }); }
 
-    if (data.errors) return res.status(500).json({ error: data.errors[0]?.longMessage || 'Search error' });
+    if (data.errors) return new Response(JSON.stringify({ error: data.errors[0]?.longMessage || "Search error" }), { status: 500, headers });
 
     const items = (data.itemSummaries || [])
       .map(i => ({ title: i.title, price: parseFloat(i.price?.value || 0), url: i.itemWebUrl }))
@@ -87,19 +63,12 @@ module.exports = async (req, res) => {
     const prices = filtered.map(i => i.price);
     const avg = prices.length ? prices.reduce((s, p) => s + p, 0) / prices.length : 0;
 
-    res.json({
-      query: q,
-      total: data.total || 0,
-      items: filtered.slice(0, 6),
-      stats: {
-        avg: Math.round(avg * 100) / 100,
-        median: Math.round(median * 100) / 100,
-        low: Math.round((prices[0] || 0) * 100) / 100,
-        high: Math.round((prices[prices.length - 1] || 0) * 100) / 100,
-        count: prices.length
-      }
-    });
+    return new Response(JSON.stringify({
+      query: q, total: data.total || 0, items: filtered.slice(0, 6),
+      stats: { avg: Math.round(avg * 100) / 100, median: Math.round(median * 100) / 100, low: Math.round((prices[0]||0) * 100) / 100, high: Math.round((prices[prices.length-1]||0) * 100) / 100, count: prices.length }
+    }), { status: 200, headers });
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers });
   }
-};
+}
