@@ -719,12 +719,11 @@ export default function HoloHQApp() {
   const fetchEbayPrice = async (name, set, condition) => {
     setEbayLoading(true); setEbayData(null);
     try {
-      const q = encodeURIComponent(`${name} ${set || ""} pokemon card`.trim());
-      const cond = encodeURIComponent(condition || "");
-      const res = await fetch(`/api/ebay?q=${q}&condition=${cond}&limit=10`);
+      const res = await fetch(`/api/ebay?name=${encodeURIComponent(name)}&set=${encodeURIComponent(set||"")}&condition=${encodeURIComponent(condition||"")}`);
       const data = await res.json();
       if (!data.error) setEbayData(data);
-    } catch(e) {}
+      else setEbayData({ error: data.error, stats: null, items: [] });
+    } catch(e) { setEbayData({ error: e.message, stats: null, items: [] }); }
     setEbayLoading(false);
   };
   const [cardAddPickerOpen, setCardAddPickerOpen] = useState(false);
