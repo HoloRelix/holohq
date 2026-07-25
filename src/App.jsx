@@ -2038,27 +2038,28 @@ export default function HoloHQApp() {
             );
           })()}
 
-          {/* eBay market data — auto loaded */}
+          {/* eBay market data */}
           <div className="px-4 mb-3">
-            <div className="ht-card p-4">
+            <div className="ht-card p-3">
+              {/* header */}
               <div className="flex items-center justify-between mb-3">
-                <div className="text-xs font-semibold" style={{ color:"var(--muted)", letterSpacing:"0.06em" }}>EBAY MARKET</div>
+                <span className="text-xs font-semibold" style={{ color:"var(--muted)", letterSpacing:"0.06em" }}>EBAY MARKET</span>
                 <div className="flex items-center gap-2">
-                  {ebayLoading && <Loader2 size={13} color="var(--cyan)" style={{ animation:"spin 1s linear infinite" }} />}
-                  {!ebayLoading && ebayData && <button onClick={() => fetchEbayPrice(r.name, r.set, r.condition)} className="ht-chip flex items-center gap-1" style={{ fontSize:10 }}><RefreshCw size={10} /> Refresh</button>}
+                  {ebayLoading && <Loader2 size={12} color="var(--cyan)" style={{ animation:"spin 1s linear infinite" }} />}
+                  {!ebayLoading && ebayData && <button onClick={() => fetchEbayPrice(r.name, r.set, r.condition)} style={{ color:"var(--muted)", fontSize:11 }}><RefreshCw size={11} /></button>}
                 </div>
               </div>
 
               {ebayData?.error && <div className="text-xs py-1" style={{ color:"var(--red)" }}>{ebayData.error}</div>}
+              {ebayLoading && !ebayData && <div className="text-xs text-center py-3" style={{ color:"var(--muted)" }}>Loading…</div>}
 
-              {ebayLoading && !ebayData && <div className="text-xs text-center py-3" style={{ color:"var(--muted)" }}>Fetching eBay data…</div>}
-
+              {/* stats pills */}
               {ebayData?.stats && (
-                <div className="grid grid-cols-4 gap-2 mb-4">
+                <div className="flex gap-2 mb-3">
                   {[["Low", ebayData.stats.low], ["Avg", ebayData.stats.avg], ["Median", ebayData.stats.median], ["High", ebayData.stats.high]].map(([label, val]) => (
-                    <div key={label} className="text-center">
+                    <div key={label} className="flex-1 text-center rounded-lg py-2" style={{ background:"var(--panel-2)" }}>
                       <div className="ht-mono text-sm font-bold" style={{ color:"var(--green)" }}>${typeof val === "number" ? val.toFixed(0) : "—"}</div>
-                      <div className="text-xs" style={{ color:"var(--muted)" }}>{label}</div>
+                      <div style={{ fontSize:10, color:"var(--muted)" }}>{label}</div>
                     </div>
                   ))}
                 </div>
@@ -2066,13 +2067,13 @@ export default function HoloHQApp() {
 
               {/* Recently sold */}
               {ebayData?.sold?.length > 0 && (
-                <div className="mb-4">
-                  <div className="text-xs font-semibold mb-2" style={{ color:"var(--muted)", letterSpacing:"0.05em" }}>RECENTLY SOLD</div>
-                  {ebayData.sold.map((item, i) => (
+                <div className="mb-3">
+                  <div className="text-xs font-semibold mb-1.5" style={{ color:"var(--muted)", letterSpacing:"0.05em" }}>RECENTLY SOLD</div>
+                  {ebayData.sold.slice(0,5).map((item, i) => (
                     <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
-                      className="ht-card p-2 flex items-center justify-between gap-2 mb-1.5" style={{ textDecoration:"none" }}>
-                      <span className="text-xs truncate flex-1" style={{ color:"var(--text)" }}>{item.title}</span>
-                      <span className="ht-mono text-xs font-bold flex-shrink-0" style={{ color:"var(--green)" }}>${item.price.toFixed(2)}</span>
+                      style={{ textDecoration:"none", display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, padding:"6px 0", borderBottom: i < 4 ? "1px solid var(--line)" : "none" }}>
+                      <span style={{ fontSize:11, color:"var(--text)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", flex:1 }}>{item.title}</span>
+                      <span className="ht-mono" style={{ fontSize:12, fontWeight:700, color:"var(--green)", flexShrink:0 }}>${item.price.toFixed(0)}</span>
                     </a>
                   ))}
                 </div>
@@ -2081,12 +2082,12 @@ export default function HoloHQApp() {
               {/* Currently listed */}
               {ebayData?.listed?.length > 0 && (
                 <div>
-                  <div className="text-xs font-semibold mb-2" style={{ color:"var(--muted)", letterSpacing:"0.05em" }}>CURRENTLY LISTED · LOW TO HIGH</div>
-                  {ebayData.listed.map((item, i) => (
+                  <div className="text-xs font-semibold mb-1.5" style={{ color:"var(--muted)", letterSpacing:"0.05em" }}>LISTED · LOW TO HIGH</div>
+                  {ebayData.listed.slice(0,5).map((item, i) => (
                     <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
-                      className="ht-card p-2 flex items-center justify-between gap-2 mb-1.5" style={{ textDecoration:"none" }}>
-                      <span className="text-xs truncate flex-1" style={{ color:"var(--text)" }}>{item.title}</span>
-                      <span className="ht-mono text-xs font-bold flex-shrink-0" style={{ color:"var(--muted)" }}>${item.price.toFixed(2)}</span>
+                      style={{ textDecoration:"none", display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, padding:"6px 0", borderBottom: i < 4 ? "1px solid var(--line)" : "none" }}>
+                      <span style={{ fontSize:11, color:"var(--muted)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", flex:1 }}>{item.title}</span>
+                      <span className="ht-mono" style={{ fontSize:12, fontWeight:600, color:"var(--text)", flexShrink:0 }}>${item.price.toFixed(0)}</span>
                     </a>
                   ))}
                 </div>
