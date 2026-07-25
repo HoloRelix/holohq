@@ -5139,11 +5139,17 @@ export default function HoloHQApp() {
             {editingProfile ? (
               <div className="flex gap-2">
                 <button onClick={() => { setEditingProfile(false); }} className="ht-chip flex-1 text-center text-xs">Cancel</button>
-                <button onClick={() => {
-                  if (editName.trim()) setProfileName(editName.trim());
-                  if (editUsername.trim()) setProfileUsername(editUsername.trim());
+                <button onClick={async () => {
+                  const newName = editName.trim() || profileName;
+                  const newUsername = editUsername.trim() || profileUsername;
+                  setProfileName(newName);
+                  setProfileUsername(newUsername);
                   setEditingProfile(false);
                   haptic(40);
+                  // Immediately save to Supabase and window.storage
+                  if (sbUser) {
+                    await sbSave(sbUser.id, { portfolios, sealedPortfolios, watchlist, salesLog, userTier, profileName: newName, profileUsername: newUsername, profileAvatar });
+                  }
                 }} className="ht-btn-primary rounded-lg py-2 text-xs font-semibold flex-1 text-center">Save Changes</button>
               </div>
             ) : (
@@ -5163,7 +5169,12 @@ export default function HoloHQApp() {
                   <span className="text-sm font-semibold">Signed in</span>
                 </div>
                 <div className="text-xs mb-3" style={{ color:"var(--muted)" }}>{sbUser?.email}</div>
-                <button onClick={async () => { await sbSignOut(); setSbUser(null); }} className="ht-chip w-full text-center text-xs flex items-center justify-center gap-1.5" style={{ color:"var(--red)", borderColor:"var(--red)" }}>
+                <button onClick={async () => {
+                  try { await sbSignOut(); } catch(e) {}
+                  setSbUser(null);
+                  // Also clear local supabase session
+                  supabase?.auth.signOut();
+                }} className="ht-chip w-full text-center text-xs flex items-center justify-center gap-1.5" style={{ color:"var(--red)", borderColor:"var(--red)" }}>
                   Sign Out of HoloHQ
                 </button>
               </div>
