@@ -4564,40 +4564,36 @@ export default function HoloHQApp() {
             </select>
           </div>
 
-          {/* inventory grid */}
-          <div className="grid grid-cols-2 gap-2">
+          {/* inventory grid — binder style */}
+          <div className="grid grid-cols-3 gap-2 tablet-cols-4">
             {items.map(it => (
-              <div key={it.key} className="ht-card flex flex-col overflow-hidden" style={{ padding: 0 }}>
-                {/* image area — real card art when matched, styled placeholder otherwise */}
-                <div className="relative flex items-center justify-center" style={{ height: 150, background: "radial-gradient(circle at 50% 30%, var(--panel-2), var(--panel))" }}>
+              <div key={it.key} className="ht-card flex flex-col overflow-hidden" style={{ padding:0 }}>
+                {/* pure card image slot */}
+                <div style={{ position:"relative", background:"var(--panel-2)", aspectRatio:"63/88", overflow:"hidden" }}>
                   {it.image ? (
                     <img src={it.image} alt={it.name} loading="lazy"
-                      onError={(e) => { e.target.style.display = "none"; }}
-                      style={{ maxHeight: 138, maxWidth: "90%", objectFit: "contain", filter: "drop-shadow(0 6px 12px rgba(0,0,0,0.5))" }} />
+                      onError={e => e.target.style.display="none"}
+                      style={{ width:"100%", height:"100%", objectFit:"contain" }} />
                   ) : (
-                    <div className="flex flex-col items-center gap-1.5">
-                      {it.kind === "sealed" ? <Layers size={26} color="var(--muted)" /> : <Sparkles size={26} color="var(--muted)" />}
-                      <span className="text-xs" style={{ color: "var(--muted)" }}>{it.kind === "sealed" ? "Sealed product" : "No image yet"}</span>
+                    <div style={{ width:"100%", height:"100%", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:6 }}>
+                      {it.kind === "sealed" ? <Layers size={22} color="var(--muted)" /> : <Sparkles size={22} color="var(--muted)" />}
+                      <span style={{ fontSize:9, color:"var(--muted)", textAlign:"center", padding:"0 6px" }}>{it.name}</span>
                     </div>
                   )}
-                  {/* badges overlay */}
-                  <div className="absolute top-2 left-2 flex items-center gap-1.5">
-                    {it.condition && (
-                      <span className="ht-mono text-xs font-bold px-1.5 py-0.5 rounded" style={{ background: "rgba(10,9,18,0.85)", color: "var(--cyan)", border: "1px solid var(--line)" }}>{it.condition.replace("Raw ", "")}</span>
-                    )}
-                    {it.kind === "sealed" && (
-                      <span className="ht-mono text-xs font-bold px-1.5 py-0.5 rounded" style={{ background: "rgba(10,9,18,0.85)", color: "var(--amber)", border: "1px solid var(--line)" }}>SEALED</span>
-                    )}
-                  </div>
-                  {it.qty > 1 && (
-                    <span className="absolute top-2 right-2 ht-mono text-xs font-bold px-1.5 py-0.5 rounded" style={{ background: "rgba(10,9,18,0.85)", color: "var(--text)", border: "1px solid var(--line)" }}>×{it.qty}</span>
-                  )}
+                  {it.qty > 1 && <span style={{ position:"absolute", top:4, left:4, fontFamily:"'JetBrains Mono',monospace", fontSize:9, fontWeight:700, color:"#F1EEFA", background:"rgba(10,9,18,0.88)", padding:"2px 5px", borderRadius:3, border:"1px solid var(--line)" }}>×{it.qty}</span>}
                 </div>
-                {/* info */}
-                <div className="p-3 flex flex-col flex-1">
-                  <div className="text-sm font-semibold leading-snug">{it.name}</div>
-                  <div className="text-xs mb-2" style={{ color: "var(--muted)" }}>{it.sub}</div>
-                  <div className="mt-auto ht-mono text-lg font-bold" style={{ color: "var(--green)" }}>${it.price.toFixed(2)}</div>
+                {/* info panel */}
+                <div style={{ padding:"9px 10px 11px", borderTop:"1px solid var(--line)" }}>
+                  {/* name + condition */}
+                  <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:4, marginBottom:3 }}>
+                    <div style={{ fontSize:12, fontWeight:600, color:"var(--text)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", flex:1, minWidth:0 }}>{it.name}</div>
+                    {it.condition && <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, fontWeight:700, color:"var(--cyan)", background:"rgba(45,212,232,0.1)", padding:"2px 6px", borderRadius:4, border:"1px solid rgba(45,212,232,0.25)", flexShrink:0, whiteSpace:"nowrap" }}>{it.condition.replace("Raw ","")}</span>}
+                    {it.kind === "sealed" && <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, fontWeight:700, color:"var(--amber)", background:"rgba(245,165,36,0.1)", padding:"2px 6px", borderRadius:4, border:"1px solid rgba(245,165,36,0.25)", flexShrink:0 }}>SEALED</span>}
+                  </div>
+                  {/* set/sub */}
+                  <div style={{ fontSize:10, color:"var(--muted)", marginBottom:7, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{it.sub}</div>
+                  {/* price */}
+                  <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:15, fontWeight:700, color:"var(--green)" }}>${Math.round(it.price)}</div>
                 </div>
               </div>
             ))}
