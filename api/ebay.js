@@ -31,11 +31,11 @@ function buildQuery(name, set, condition, category) {
   return parts.join(" ");
 }
 
-async function ebaySearch(token, q, params = {}) {
+async function ebaySearch(token, q, sort) {
   const url = new URL("https://api.ebay.com/buy/browse/v1/item_summary/search");
   url.searchParams.set("q", q);
-  url.searchParams.set("limit", "10");
-  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  url.searchParams.set("limit", "8");
+  url.searchParams.set("sort", sort);
   const res = await fetch(url.toString(), {
     headers: { "Authorization": `Bearer ${token}`, "X-EBAY-C-MARKETPLACE-ID": "EBAY_US" }
   });
@@ -60,45 +60,30 @@ export default async function handler(req) {
     const token = await getToken(id, secret);
     const q = buildQuery(name, set, condition, category);
 
-    // Fetch active listings sorted two ways
-    const [byPriceData, byNewData] = await Promise.all([
-      // Lowest price first — cheapest current listings
-      ebaySearch(token, q, { sort: "price", filter: "buyingOptions:{FIXED_PRICE}" }),
-      // Highest price first — most expensive / likely graded/premium
-      ebaySearch(token, q, { sort: "-price", filter: "buyingOptions:{FIXED_PRICE}" }),
-    ]);
+    // Single search sorted by price — most reliable
+    const data = await ebaySearch(token, q, "price");
+    const items = (data.itemSummaries || [])
+      .map(i => ({ title: i.title, price: parseFloat(i.price?.value || 0), url: i.itemWebUrl }))
+      .filter(i => i.price > 0)
+      .sort((a, b) => a.price - b.price);
 
-    const mapItem = i => ({
-      title: i.title,
-      price: parseFloat(i.price?.value || 0),
-      url: i.itemWebUrl,
-      condition: i.condition,
-    });
-
-    const cheap = (byPriceData.itemSummaries || []).map(mapItem).filter(i => i.price > 0);
-    const expensive = (byNewData.itemSummaries || []).map(mapItem).filter(i => i.price > 0);
-
-    // Deduplicate — expensive list removes items already in cheap
-    const cheapUrls = new Set(cheap.map(i => i.url));
-    const uniqueExpensive = expensive.filter(i => !cheapUrls.has(i.url));
-
-    const allPrices = cheap.map(i => i.price).sort((a,b) => a-b);
-    const median = allPrices.length ? allPrices[Math.floor(allPrices.length / 2)] : 0;
-    const filtered = median > 0 ? allPrices.filter(p => p >= median * 0.15 && p <= median * 5) : allPrices;
-    const avg = filtered.length ? filtered.reduce((s,p) => s+p, 0) / filtered.length : 0;
+    const prices = items.map(i => i.price);
+    const median = prices.length ? prices[Math.floor(prices.length / 2)] : 0;
+    const filtered = median > 0 ? prices.filter(p => p >= median * 0.15 && p <= median * 5) : prices;
+    const avg = filtered.length ? filtered.reduce((s, p) => s + p, 0) / filtered.length : 0;
 
     return new Response(JSON.stringify({
       query: q,
-      // "sold" = lowest priced listings (best deals / recent sellers)
-      sold: cheap.slice(0, 6),
-      // "listed" = higher priced / premium listings
-      listed: uniqueExpensive.slice(0, 6).reverse(), // reverse so lowest of expensive comes first
+      // Low end listings
+      sold: items.slice(0, 5),
+      // High end listings  
+      listed: items.slice(-5).reverse(),
       stats: {
         avg: Math.round(avg * 100) / 100,
         median: Math.round(median * 100) / 100,
-        low: Math.round((filtered[0] || 0) * 100) / 100,
-        high: Math.round((filtered[filtered.length-1] || 0) * 100) / 100,
-        count: filtered.length
+        low: Math.round((prices[0] || 0) * 100) / 100,
+        high: Math.round((prices[prices.length - 1] || 0) * 100) / 100,
+        count: prices.length
       }
     }), { status: 200, headers: hdrs });
 
