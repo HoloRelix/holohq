@@ -733,7 +733,7 @@ export default function HoloHQApp() {
   const [cardAddPickerOpen, setCardAddPickerOpen] = useState(false);
   const [sealedAddPickerOpen, setSealedAddPickerOpen] = useState(false);
   const [detailAddConfirm, setDetailAddConfirm] = useState("");
-  const openCardDetail = (row) => { const cond = CONDITION_MULT[row.condition] != null ? row.condition : "Raw NM"; setCardDetail(row); setChartRange("1mo"); setChartCondition(cond); setGradeMode(cond.startsWith("Raw ") ? "raw" : "graded"); setChartOpen(true); setCardAddPickerOpen(false); setEbayData(null); setTimeout(() => fetchEbayPrice(row.name, row.set, row.condition, row.category), 100); };
+  const openCardDetail = (row) => { const cond = CONDITION_MULT[row.condition] != null ? row.condition : "Raw NM"; setCardDetail(row); setChartRange("1mo"); setChartCondition(cond); setGradeMode(cond.startsWith("Raw ") ? "raw" : "graded"); setChartOpen(true); setCardAddPickerOpen(false); setEbayData(null); setTimeout(() => fetchEbayPrice(row.name, row.set, cond, row.category), 100); };
   const openSealedDetail = (item) => { setSealedDetail(item); setChartRange("1mo"); setSealedAddPickerOpen(false); };
   const addCardDetailToPortfolio = (portfolioId) => { haptic(40);
     const r = cardDetail;
@@ -1961,9 +1961,9 @@ export default function HoloHQApp() {
           <div className="px-4 mt-3 flex items-center gap-2">
             {showRawScale && (
               <div className="flex rounded-full p-0.5 flex-shrink-0" style={{ background: "var(--panel-2)" }}>
-                <button onClick={() => { setGradeMode("raw"); const nc = "Raw NM"; if (!activeCondition.startsWith("Raw ")) { setChartCondition(nc); setEbayData(null); setTimeout(() => fetchEbayPrice(r.name, r.set, nc, r.category), 100); } }} className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                <button onClick={() => { setGradeMode("raw"); const nc = "Raw NM"; setChartCondition(nc); setEbayData(null); setTimeout(() => fetchEbayPrice(r.name, r.set, nc, r.category), 100); }} className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
                   style={{ background: gradeMode === "raw" ? "var(--purple)" : "transparent", color: gradeMode === "raw" ? "#fff" : "var(--muted)" }}>Raw</button>
-                <button onClick={() => { setGradeMode("graded"); const nc = "PSA 10"; if (activeCondition.startsWith("Raw ")) { setChartCondition(nc); setEbayData(null); setTimeout(() => fetchEbayPrice(r.name, r.set, nc, r.category), 100); } }} className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                <button onClick={() => { setGradeMode("graded"); const nc = "PSA 10"; setChartCondition(nc); setEbayData(null); setTimeout(() => fetchEbayPrice(r.name, r.set, nc, r.category), 100); }} className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
                   style={{ background: gradeMode === "graded" ? "var(--purple)" : "transparent", color: gradeMode === "graded" ? "#fff" : "var(--muted)" }}>Graded</button>
               </div>
             )}
@@ -2047,10 +2047,10 @@ export default function HoloHQApp() {
             <div className="ht-card p-3">
               {/* header */}
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-semibold" style={{ color:"var(--muted)", letterSpacing:"0.06em" }}>EBAY MARKET</span>
+                <span className="text-xs font-semibold" style={{ color:"var(--muted)", letterSpacing:"0.06em" }}>EBAY · {activeCondition?.replace("Raw ","") || "NM"}</span>
                 <div className="flex items-center gap-2">
                   {ebayLoading && <Loader2 size={12} color="var(--cyan)" style={{ animation:"spin 1s linear infinite" }} />}
-                  {!ebayLoading && ebayData && <button onClick={() => fetchEbayPrice(r.name, r.set, r.condition, r.category)} style={{ color:"var(--muted)", fontSize:11 }}><RefreshCw size={11} /></button>}
+                  {!ebayLoading && ebayData && <button onClick={() => fetchEbayPrice(r.name, r.set, activeCondition, r.category)} style={{ color:"var(--muted)", fontSize:11 }}><RefreshCw size={11} /></button>}
                 </div>
               </div>
 
