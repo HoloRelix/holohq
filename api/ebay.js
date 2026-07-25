@@ -14,6 +14,16 @@ async function getToken(id, secret) {
   return data.access_token;
 }
 
+// Keywords that indicate non-card junk listings
+const JUNK_KEYWORDS = ['keychain', 'custom', 'slab holder', 'case', 'sleeve', 'binder', 
+  'display', 'frame', 'print', 'reprint', 'proxy', 'lot', 'bundle', 'collection',
+  'mini slab', 'holographic custom', 'sticker', 'patch', 'pin', 'plush'];
+
+function isJunk(title) {
+  const t = title.toLowerCase();
+  return JUNK_KEYWORDS.some(k => t.includes(k));
+}
+
 export default async function handler(req) {
   const { searchParams } = new URL(req.url);
   const name = searchParams.get("name") || "";
@@ -30,47 +40,59 @@ export default async function handler(req) {
   try {
     const token = await getToken(id, secret);
     const isGraded = condition.match(/^(PSA|BGS|CGC)\s*[\d.]+/i);
+    const gradeMatch = isGraded ? condition.match(/^(PSA|BGS|CGC)\s*([\d.]+|Black Label|Pristine)/i) : null;
 
-    // Build query — don't quote the name, it's too strict
-    let q = name;
-    if (isGraded) {
-      const m = condition.match(/^(PSA|BGS|CGC)\s*([\d.]+|Black Label|Pristine)/i);
-      if (m) q += ` ${m[1]} ${m[2]}`;
+    // Try progressively looser queries until we get results
+    const queries = [];
+    
+    if (gradeMatch) {
+      // Graded: try with set first, then without
+      queries.push(`${name} ${gradeMatch[1]} ${gradeMatch[2]} ${set} pokemon`);
+      queries.push(`${name} ${gradeMatch[1]} ${gradeMatch[2]} pokemon`);
+      queries.push(`${name} ${gradeMatch[1]} ${gradeMatch[2]}`);
     } else {
-      q += ' -PSA -BGS -CGC -SGC';
+      // Raw: exclude graded
+      queries.push(`${name} ${set} pokemon -PSA -BGS -CGC -SGC`);
+      queries.push(`${name} pokemon -PSA -BGS -CGC -SGC`);
     }
-    // Don't quote set — too restrictive
-    if (set && set.length < 25) q += ` ${set}`;
-    if (category === 'onepiece') q += ' one piece';
-    else if (category === 'basketball' || category === 'football' || category === 'baseball') q += ' card';
-    else q += ' pokemon';
 
-    const url = `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(q)}&limit=10&sort=price`;
-    const res = await fetch(url, {
-      headers: { "Authorization": `Bearer ${token}`, "X-EBAY-C-MARKETPLACE-ID": "EBAY_US" }
-    });
-    const data = await res.json();
+    let items = [];
+    let usedQuery = '';
 
-    const items = (data.itemSummaries || [])
-      .map(i => ({ title: i.title, price: parseFloat(i.price?.value || 0), url: i.itemWebUrl }))
-      .filter(i => i.price > 0)
-      .sort((a, b) => a.price - b.price);
+    for (const q of queries) {
+      const url = `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(q)}&limit=20&sort=price`;
+      const res = await fetch(url, {
+        headers: { "Authorization": `Bearer ${token}`, "X-EBAY-C-MARKETPLACE-ID": "EBAY_US" }
+      });
+      const data = await res.json();
+      const raw = (data.itemSummaries || [])
+        .map(i => ({ title: i.title, price: parseFloat(i.price?.value || 0), url: i.itemWebUrl }))
+        .filter(i => i.price > 0 && !isJunk(i.title));
+      
+      if (raw.length >= 3) {
+        items = raw.sort((a, b) => a.price - b.price);
+        usedQuery = q;
+        break;
+      }
+    }
 
-    const prices = items.map(i => i.price);
+    // Remove price outliers
+    const prices = items.map(i => i.price).sort((a,b) => a-b);
     const median = prices.length ? prices[Math.floor(prices.length / 2)] : 0;
-    const avg = prices.length ? prices.reduce((s,p) => s+p, 0) / prices.length : 0;
+    const filtered = median > 0 ? items.filter(i => i.price >= median * 0.2 && i.price <= median * 5) : items;
+    const filteredPrices = filtered.map(i => i.price);
+    const avg = filteredPrices.length ? filteredPrices.reduce((s,p) => s+p, 0) / filteredPrices.length : 0;
 
     return new Response(JSON.stringify({
-      query: q,
+      query: usedQuery,
       sold: [],
-      listed: items.slice(0, 8),
-      total: data.total || 0,
-      stats: prices.length ? {
+      listed: filtered.slice(0, 8),
+      stats: filteredPrices.length ? {
         avg: Math.round(avg * 100) / 100,
         median: Math.round(median * 100) / 100,
-        low: Math.round(prices[0] * 100) / 100,
-        high: Math.round(prices[prices.length-1] * 100) / 100,
-        count: prices.length
+        low: Math.round(filteredPrices[0] * 100) / 100,
+        high: Math.round(filteredPrices[filteredPrices.length-1] * 100) / 100,
+        count: filteredPrices.length
       } : null
     }), { status: 200, headers: hdrs });
 
