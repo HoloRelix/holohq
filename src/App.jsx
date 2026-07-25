@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useMemo, useLayoutEffect, useEffect } from "react";
 import Papa from "papaparse";
-import { sbSignIn, sbSignUp, sbSignOut, sbSave, sbLoad, sbOnAuthChange } from "./supabase.js";
+import { supabase, sbSignIn, sbSignUp, sbSignOut, sbSave, sbLoad, sbOnAuthChange } from "./supabase.js";
 
 import {
   Sparkles, Upload, Plus, Trash2, TrendingUp, TrendingDown, Download,
@@ -1946,6 +1946,48 @@ export default function HoloHQApp() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* eBay live prices */}
+          <div className="px-4 mb-3">
+            <div className="ht-card p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-xs font-semibold" style={{ color:"var(--muted)", letterSpacing:"0.06em" }}>EBAY LIVE PRICES</div>
+                <button onClick={() => fetchEbayPrice(r.name, r.set, r.condition)}
+                  disabled={ebayLoading}
+                  className="ht-chip text-xs flex items-center gap-1.5"
+                  style={{ fontSize:11 }}>
+                  {ebayLoading ? <Loader2 size={11} style={{ animation:"spin 1s linear infinite" }} /> : <RefreshCw size={11} />}
+                  {ebayLoading ? "Loading…" : "Fetch Prices"}
+                </button>
+              </div>
+              {ebayData ? (
+                <>
+                  <div className="grid grid-cols-4 gap-2 mb-3">
+                    {[["Avg", ebayData.stats.avg], ["Median", ebayData.stats.median], ["Low", ebayData.stats.low], ["High", ebayData.stats.high]].map(([label, val]) => (
+                      <div key={label} className="text-center">
+                        <div className="ht-mono text-sm font-bold" style={{ color:"var(--green)" }}>${val.toFixed(0)}</div>
+                        <div className="text-xs" style={{ color:"var(--muted)" }}>{label}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    {ebayData.items.slice(0,5).map((item, i) => (
+                      <a key={i} href={item.url} target="_blank" rel="noopener noreferrer"
+                        className="ht-card p-2 flex items-center justify-between gap-2" style={{ textDecoration:"none" }}>
+                        <span className="text-xs truncate flex-1" style={{ color:"var(--text)" }}>{item.title}</span>
+                        <span className="ht-mono text-xs font-bold flex-shrink-0" style={{ color:"var(--green)" }}>${item.price.toFixed(2)}</span>
+                      </a>
+                    ))}
+                  </div>
+                  <div className="text-xs mt-2 text-center" style={{ color:"var(--muted)" }}>{ebayData.total} listings found · {ebayData.stats.count} with prices</div>
+                </>
+              ) : (
+                <div className="text-xs text-center py-3" style={{ color:"var(--muted)" }}>
+                  {ebayLoading ? "Fetching live eBay prices…" : "Tap Fetch Prices to see live eBay listings"}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* population — always visible, grouped by company with proportion bars */}
